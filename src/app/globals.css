@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand colors — Masterpiece CTG */
+    --brand-gold: 40 55% 50%;          /* #C4973A — antique gold */
+    --brand-gold-light: 40 55% 65%;    /* lighter gold */
+    --brand-gold-dark: 38 60% 38%;     /* darker gold */
+    --brand-dark: 30 15% 10%;          /* near-black warm */
+
+    --background: 40 10% 97%;
+    --foreground: 30 15% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 30 15% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 15% 10%;
+    --primary: 30 15% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 40 15% 94%;
+    --secondary-foreground: 30 15% 10%;
+    --muted: 40 10% 93%;
+    --muted-foreground: 30 8% 46%;
+    --accent: 40 55% 50%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 40 12% 88%;
+    --input: 40 12% 88%;
+    --ring: 40 55% 50%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
