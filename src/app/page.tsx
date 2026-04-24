@@ -4,6 +4,7 @@ import { ProductCard } from "@/components/catalog/ProductCard";
 import { CatalogFilters } from "@/components/catalog/CatalogFilters";
 import { Package, ShoppingBag } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -59,11 +60,19 @@ export default async function CatalogPage({
                 priority
               />
             </div>
-            <div className="flex items-center gap-2 text-gold-400">
-              <ShoppingBag className="h-5 w-5" />
-              <span className="text-sm font-medium">
-                {products.length} disponible{products.length !== 1 ? "s" : ""}
-              </span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-gold-400">
+                <ShoppingBag className="h-5 w-5" />
+                <span className="text-sm font-medium">
+                  {products.length} disponible{products.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <Link
+                href="/admin/login"
+                className="text-xs text-gold-700 hover:text-gold-500 transition-colors px-2 py-1 rounded border border-gold-800/40 hover:border-gold-700/60"
+              >
+                admin
+              </Link>
             </div>
           </div>
 
@@ -75,13 +84,30 @@ export default async function CatalogPage({
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
+        {/* Section header */}
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-lg font-bold text-gray-800 tracking-tight">
+              {hasFilters ? "Resultados" : "Colección"}
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {hasFilters
+                ? `${products.length} producto${products.length !== 1 ? "s" : ""}${search ? ` para "${search}"` : ""}`
+                : `${products.length} artículo${products.length !== 1 ? "s" : ""} disponible${products.length !== 1 ? "s" : ""}`}
+            </p>
+          </div>
+          {hasFilters && (
+            <span className="text-xs text-gold-600 font-medium">
+              {products.length} resultado{products.length !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+
         {products.length === 0 ? (
           <div className="text-center py-24">
             <Package className="h-16 w-16 text-gray-200 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-400">
-              {hasFilters
-                ? "No hay resultados para esta busqueda"
-                : "El catalogo esta vacio"}
+              {hasFilters ? "Sin resultados" : "Catálogo vacío"}
             </h2>
             <p className="text-gray-400 mt-2 text-sm">
               {hasFilters
@@ -90,30 +116,17 @@ export default async function CatalogPage({
             </p>
           </div>
         ) : (
-          <>
-            {hasFilters && (
-              <p className="text-sm text-muted-foreground mb-4">
-                {products.length} resultado{products.length !== 1 ? "s" : ""}
-                {search && (
-                  <span>
-                    {" "}
-                    para <span className="font-medium">&ldquo;{search}&rdquo;</span>
-                  </span>
-                )}
-              </p>
-            )}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={{
-                    ...product,
-                    price: Number(product.price),
-                  }}
-                />
-              ))}
-            </div>
-          </>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+            {products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={{
+                  ...product,
+                  price: Number(product.price),
+                }}
+              />
+            ))}
+          </div>
         )}
       </main>
 

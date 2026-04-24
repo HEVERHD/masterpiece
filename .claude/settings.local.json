@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(npx next:*)",
-      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(32\\).toString\\('base64'\\)\\)\")"
+      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(32\\).toString\\('base64'\\)\\)\")",
+      "Bash(mv dashboard:*)",
+      "Bash(mv categorias:*)",
+      "Bash(mv productos:*)",
+      "Bash(mv page.tsx \"\\(panel\\)/page.tsx\")"
     ]
   }
 }

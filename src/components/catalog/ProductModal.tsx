@@ -39,7 +39,7 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
     const url = `${window.location.origin}/?producto=${product.id}`;
     const text = `👗 *${product.name}*\n💰 Precio: ${formatPrice(product.price)}\n📍 Masterpiecectg — Cartagena\n\nVer catalogo: ${url}`;
     window.open(
-      `https://wa.me/?text=${encodeURIComponent(text)}`,
+      `https://wa.me/573150014381?text=${encodeURIComponent(text)}`,
       "_blank"
     );
   }
