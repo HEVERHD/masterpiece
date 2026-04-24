@@ -33,7 +33,11 @@ export function ProductCard({ product }: { product: Product }) {
   function shareWhatsApp(e: React.MouseEvent) {
     e.stopPropagation();
     const url = `${window.location.origin}/?producto=${product.id}`;
-    const text = `👗 *${product.name}*\n💰 Precio: ${formatPrice(product.price)}\n\nVer en Masterpiecectg: ${url}`;
+    const text =
+      `Hola! 👋 Vengo del catálogo de *Masterpiece CTG* y me interesa:\n\n` +
+      `👕 *${product.name}*\n` +
+      `💰 Precio: ${formatPrice(product.price)}\n\n` +
+      `¿Está disponible?`;
     window.open(`https://wa.me/573150014381?text=${encodeURIComponent(text)}`, "_blank");
   }
 

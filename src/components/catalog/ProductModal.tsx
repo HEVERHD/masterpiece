@@ -30,14 +30,22 @@ interface ProductModalProps {
 
 export function ProductModal({ product, open, onClose }: ProductModalProps) {
   const [imgIndex, setImgIndex] = useState(0);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   if (!open) return null;
 
   const totalStock = product.sizes.reduce((sum, s) => sum + s.stock, 0);
+  const availableSizes = product.sizes.filter((s) => s.stock > 0);
+  const hasSizes = availableSizes.length > 0;
 
   function shareWhatsApp() {
-    const url = `${window.location.origin}/?producto=${product.id}`;
-    const text = `👗 *${product.name}*\n💰 Precio: ${formatPrice(product.price)}\n📍 Masterpiecectg — Cartagena\n\nVer catalogo: ${url}`;
+    const sizeText = selectedSize ? `📏 Talla: *${selectedSize}*\n` : "";
+    const text =
+      `Hola! 👋 Vengo del catálogo de *Masterpiece CTG* y quiero comprar:\n\n` +
+      `👕 *${product.name}*\n` +
+      sizeText +
+      `💰 Precio: ${formatPrice(product.price)}\n\n` +
+      `¿Está disponible?`;
     window.open(
       `https://wa.me/573150014381?text=${encodeURIComponent(text)}`,
       "_blank"
@@ -116,9 +124,7 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
                     key={i}
                     onClick={() => setImgIndex(i)}
                     className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${
-                      i === imgIndex
-                        ? "border-amber-500"
-                        : "border-transparent"
+                      i === imgIndex ? "border-gold-500" : "border-transparent"
                     }`}
                   >
                     <Image
@@ -149,30 +155,40 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
               </p>
             )}
 
-            {/* Sizes */}
-            {product.sizes.length > 0 && (
+            {/* Size selector */}
+            {hasSizes && totalStock > 0 && (
               <div>
                 <p className="text-sm font-semibold mb-2">
-                  Tallas disponibles:
+                  Selecciona tu talla:
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {product.sizes.map((s) => (
-                    <div
-                      key={s.size}
-                      className={`px-3 py-1.5 rounded-lg border text-sm font-medium ${
-                        s.stock > 0
-                          ? "border-gray-300 text-gray-800 bg-white"
-                          : "border-gray-100 text-gray-300 bg-gray-50 line-through"
-                      }`}
-                    >
-                      {s.size}
-                      {s.stock > 0 && s.stock <= 3 && (
-                        <span className="ml-1 text-amber-500 text-xs">
-                          ({s.stock})
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                  {product.sizes.map((s) => {
+                    const available = s.stock > 0;
+                    const isSelected = selectedSize === s.size;
+                    return (
+                      <button
+                        key={s.size}
+                        disabled={!available}
+                        onClick={() =>
+                          setSelectedSize(isSelected ? null : s.size)
+                        }
+                        className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${
+                          !available
+                            ? "border-gray-100 text-gray-300 bg-gray-50 line-through cursor-not-allowed"
+                            : isSelected
+                            ? "border-gold-500 bg-gold-500 text-white shadow-sm"
+                            : "border-gray-300 text-gray-800 bg-white hover:border-gold-400"
+                        }`}
+                      >
+                        {s.size}
+                        {available && s.stock <= 3 && (
+                          <span className={`ml-1 text-xs ${isSelected ? "text-white/80" : "text-amber-500"}`}>
+                            ({s.stock})
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
                 {product.sizes.some((s) => s.stock > 0 && s.stock <= 3) && (
                   <p className="text-xs text-amber-600 mt-2">
@@ -182,22 +198,25 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
               </div>
             )}
 
-            {totalStock === 0 ? (
+            {totalStock === 0 && (
               <div className="bg-gray-100 rounded-xl p-4 text-center">
                 <p className="font-semibold text-gray-500">Agotado</p>
                 <p className="text-sm text-gray-400 mt-1">
                   Escríbenos para saber cuándo vuelve
                 </p>
               </div>
-            ) : null}
+            )}
 
             <Button
               variant="whatsapp"
               className="w-full font-semibold gap-2"
               onClick={shareWhatsApp}
+              disabled={totalStock === 0 || (hasSizes && !selectedSize)}
             >
               <MessageCircle className="h-5 w-5" />
-              Compartir por WhatsApp
+              {hasSizes && !selectedSize
+                ? "Selecciona una talla"
+                : "Pedir por WhatsApp"}
             </Button>
 
             <p className="text-xs text-center text-muted-foreground">

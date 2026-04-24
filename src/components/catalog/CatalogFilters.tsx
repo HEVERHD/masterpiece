@@ -4,8 +4,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 import { Search, X } from "lucide-react";
 
-const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL", "Unico"];
-
 interface Category {
   id: string;
   name: string;
@@ -85,23 +83,6 @@ export function CatalogFilters({ categories }: CatalogFiltersProps) {
               }`}
             >
               {cat.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Size filter */}
-        <div className="flex gap-1 flex-wrap">
-          {SIZES.map((s) => (
-            <button
-              key={s}
-              onClick={() => updateFilter("size", size === s ? "" : s)}
-              className={`w-9 h-9 rounded-lg text-xs font-bold transition-all border ${
-                size === s
-                  ? "bg-gold-500 text-brand-darker border-gold-500"
-                  : "bg-transparent text-gold-400 border-gold-800/50 hover:border-gold-400"
-              }`}
-            >
-              {s}
             </button>
           ))}
         </div>
