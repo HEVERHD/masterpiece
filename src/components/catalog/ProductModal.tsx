@@ -13,6 +13,7 @@ import {
   Bike,
   Store,
   MapPin,
+  PackageIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
@@ -39,7 +40,7 @@ interface ProductModalProps {
 }
 
 type Step = "product" | "delivery" | "form" | "success";
-type DeliveryType = "delivery" | "pickup" | null;
+type DeliveryType = "domicilio" | "envio_nacional" | "tienda" | null;
 
 const STORE_ADDRESS = "Campestre mz 82 lote 3 etapa 8, Cartagena, Colombia";
 const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
@@ -53,10 +54,12 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form fields
+  // Form
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [carrier, setCarrier] = useState<"interrapidisimo" | "envia" | "">("");
   const [message, setMessage] = useState("");
 
   if (!open) return null;
@@ -66,6 +69,12 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
   const hasSizes = availableSizes.length > 0;
   const canProceed = totalStock > 0 && (!hasSizes || selectedSize !== null);
 
+  const deliveryLabel: Record<string, string> = {
+    domicilio: "🛵 Domicilio en Cartagena",
+    envio_nacional: "📦 Envío nacional",
+    tienda: "🏪 Recoger en tienda",
+  };
+
   function handleClose() {
     setStep("product");
     setSelectedSize(null);
@@ -73,6 +82,8 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
     setCustomerName("");
     setCustomerPhone("");
     setAddress("");
+    setCity("");
+    setCarrier("");
     setMessage("");
     setError(null);
     onClose();
@@ -83,10 +94,15 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
     else if (step === "delivery") setStep("product");
   }
 
+  const formValid =
+    customerName.trim() &&
+    customerPhone.trim() &&
+    (deliveryType === "tienda" || address.trim()) &&
+    (deliveryType !== "envio_nacional" || (city.trim() && carrier));
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!customerName.trim() || !customerPhone.trim()) return;
-    if (deliveryType === "delivery" && !address.trim()) return;
+    if (!formValid) return;
 
     setLoading(true);
     setError(null);
@@ -103,7 +119,9 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
           customerName: customerName.trim(),
           customerPhone: customerPhone.trim(),
           deliveryType,
-          address: deliveryType === "delivery" ? address.trim() : STORE_ADDRESS,
+          address: deliveryType === "tienda" ? STORE_ADDRESS : address.trim(),
+          city: city.trim(),
+          carrier,
           message: message.trim(),
         }),
       });
@@ -127,12 +145,10 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
       )}
       <div className="min-w-0 flex-1">
         <p className="font-semibold text-sm truncate">{product.name}</p>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap">
           {selectedSize && <span className="text-xs text-stone-500">Talla: {selectedSize}</span>}
           {deliveryType && (
-            <span className={`text-xs font-medium ${deliveryType === "delivery" ? "text-blue-600" : "text-green-600"}`}>
-              · {deliveryType === "delivery" ? "Envío a domicilio" : "Recoger en tienda"}
-            </span>
+            <span className="text-xs text-gold-600 font-medium">· {deliveryLabel[deliveryType]}</span>
           )}
         </div>
       </div>
@@ -170,13 +186,7 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
             <div className="relative sm:w-1/2">
               <div className="relative aspect-square bg-gray-100">
                 {product.images.length > 0 ? (
-                  <Image
-                    src={product.images[imgIndex].url}
-                    alt={product.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 100vw, 50vw"
-                  />
+                  <Image src={product.images[imgIndex].url} alt={product.name} fill className="object-cover" sizes="(max-width: 640px) 100vw, 50vw" />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Package className="h-16 w-16 text-gray-300" />
@@ -184,16 +194,10 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
                 )}
                 {product.images.length > 1 && (
                   <>
-                    <button
-                      onClick={() => setImgIndex((i) => (i === 0 ? product.images.length - 1 : i - 1))}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md"
-                    >
+                    <button onClick={() => setImgIndex((i) => (i === 0 ? product.images.length - 1 : i - 1))} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md">
                       <ChevronLeft className="h-5 w-5" />
                     </button>
-                    <button
-                      onClick={() => setImgIndex((i) => (i === product.images.length - 1 ? 0 : i + 1))}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md"
-                    >
+                    <button onClick={() => setImgIndex((i) => (i === product.images.length - 1 ? 0 : i + 1))} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md">
                       <ChevronRight className="h-5 w-5" />
                     </button>
                   </>
@@ -202,11 +206,7 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
               {product.images.length > 1 && (
                 <div className="flex gap-2 p-3 overflow-x-auto">
                   {product.images.map((img, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setImgIndex(i)}
-                      className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${i === imgIndex ? "border-gold-500" : "border-transparent"}`}
-                    >
+                    <button key={i} onClick={() => setImgIndex(i)} className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${i === imgIndex ? "border-gold-500" : "border-transparent"}`}>
                       <Image src={img.url} alt={`Foto ${i + 1}`} width={56} height={56} className="object-cover w-full h-full" />
                     </button>
                   ))}
@@ -232,16 +232,11 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
                       const available = s.stock > 0;
                       const isSelected = selectedSize === s.size;
                       return (
-                        <button
-                          key={s.size}
-                          disabled={!available}
-                          onClick={() => setSelectedSize(isSelected ? null : s.size)}
+                        <button key={s.size} disabled={!available} onClick={() => setSelectedSize(isSelected ? null : s.size)}
                           className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${
-                            !available
-                              ? "border-gray-100 text-gray-300 bg-gray-50 line-through cursor-not-allowed"
-                              : isSelected
-                              ? "border-gold-500 bg-gold-500 text-white shadow-sm"
-                              : "border-gray-300 text-gray-800 bg-white hover:border-gold-400"
+                            !available ? "border-gray-100 text-gray-300 bg-gray-50 line-through cursor-not-allowed"
+                            : isSelected ? "border-gold-500 bg-gold-500 text-white shadow-sm"
+                            : "border-gray-300 text-gray-800 bg-white hover:border-gold-400"
                           }`}
                         >
                           {s.size}
@@ -264,16 +259,21 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
                   <p className="text-sm text-gray-400 mt-1">Escríbenos para saber cuándo vuelve</p>
                 </div>
               ) : (
-                <button
-                  disabled={!canProceed}
-                  onClick={() => setStep("delivery")}
+                <button disabled={!canProceed} onClick={() => setStep("delivery")}
                   className="w-full bg-brand-darker hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed text-gold-400 font-semibold py-3 rounded-xl transition-colors"
                 >
                   {hasSizes && !selectedSize ? "Selecciona una talla" : "Quiero este producto →"}
                 </button>
               )}
 
-              <p className="text-xs text-center text-muted-foreground">Masterpiecectg — Cartagena 🇨🇴</p>
+              {/* Métodos de pago */}
+              <div className="flex items-center justify-center gap-3 text-xs text-stone-400">
+                <span>💳 Nequi</span>
+                <span>·</span>
+                <span>🏦 Transferencia</span>
+                <span>·</span>
+                <span>💵 Efectivo</span>
+              </div>
             </div>
           </div>
         )}
@@ -284,46 +284,55 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
             <OrderSummary />
 
             <h3 className="text-base font-bold mb-1">¿Cómo quieres recibirlo?</h3>
-            <p className="text-sm text-muted-foreground mb-4">Elige una opción para continuar.</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              Hacemos domicilios en Cartagena y envíos a toda Colombia.
+            </p>
 
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <button
-                onClick={() => setDeliveryType("delivery")}
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                  deliveryType === "delivery"
-                    ? "border-brand-darker bg-brand-darker text-gold-400"
-                    : "border-stone-200 hover:border-stone-300 text-gray-700"
+            <div className="space-y-3 mb-6">
+              {/* Domicilio Cartagena */}
+              <button onClick={() => setDeliveryType("domicilio")}
+                className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
+                  deliveryType === "domicilio" ? "border-brand-darker bg-brand-darker text-gold-400" : "border-stone-200 hover:border-stone-300"
                 }`}
               >
-                <Bike className="h-7 w-7" />
-                <span className="text-sm font-semibold">Envío a domicilio</span>
+                <Bike className="h-6 w-6 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-sm">Domicilio en Cartagena</p>
+                  <p className={`text-xs mt-0.5 ${deliveryType === "domicilio" ? "text-gold-600" : "text-stone-400"}`}>Te lo llevamos a tu puerta</p>
+                </div>
               </button>
 
-              <button
-                onClick={() => setDeliveryType("pickup")}
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                  deliveryType === "pickup"
-                    ? "border-brand-darker bg-brand-darker text-gold-400"
-                    : "border-stone-200 hover:border-stone-300 text-gray-700"
+              {/* Envío nacional */}
+              <button onClick={() => setDeliveryType("envio_nacional")}
+                className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
+                  deliveryType === "envio_nacional" ? "border-brand-darker bg-brand-darker text-gold-400" : "border-stone-200 hover:border-stone-300"
                 }`}
               >
-                <Store className="h-7 w-7" />
-                <span className="text-sm font-semibold">Recoger en tienda</span>
+                <PackageIcon className="h-6 w-6 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-sm">Envío nacional</p>
+                  <p className={`text-xs mt-0.5 ${deliveryType === "envio_nacional" ? "text-gold-600" : "text-stone-400"}`}>Interrapidísimo · Envía — toda Colombia</p>
+                </div>
+              </button>
+
+              {/* Recoger en tienda */}
+              <button onClick={() => setDeliveryType("tienda")}
+                className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
+                  deliveryType === "tienda" ? "border-brand-darker bg-brand-darker text-gold-400" : "border-stone-200 hover:border-stone-300"
+                }`}
+              >
+                <Store className="h-6 w-6 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-sm">Recoger en tienda</p>
+                  <p className={`text-xs mt-0.5 ${deliveryType === "tienda" ? "text-gold-600" : "text-stone-400"}`}>Sin costo de envío</p>
+                </div>
               </button>
             </div>
 
-            {/* Mapa cuando eligen recoger */}
-            {deliveryType === "pickup" && (
+            {/* Mapa si eligen tienda */}
+            {deliveryType === "tienda" && (
               <div className="mb-5 rounded-xl overflow-hidden border border-stone-200">
-                <iframe
-                  src={MAPS_EMBED}
-                  width="100%"
-                  height="200"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
+                <iframe src={MAPS_EMBED} width="100%" height="180" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
                 <div className="flex items-start gap-2 p-3 bg-stone-50">
                   <MapPin className="h-4 w-4 text-gold-600 flex-shrink-0 mt-0.5" />
                   <p className="text-xs text-stone-600">{STORE_ADDRESS}</p>
@@ -331,9 +340,7 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
               </div>
             )}
 
-            <button
-              disabled={!deliveryType}
-              onClick={() => setStep("form")}
+            <button disabled={!deliveryType} onClick={() => setStep("form")}
               className="w-full bg-brand-darker hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed text-gold-400 font-semibold py-3 rounded-xl transition-colors"
             >
               Continuar →
@@ -346,44 +353,62 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
           <div className="p-6 max-w-md mx-auto">
             <OrderSummary />
 
-            <h3 className="text-base font-bold mb-1">¿Cómo te contactamos?</h3>
+            <h3 className="text-base font-bold mb-1">Tus datos</h3>
             <p className="text-sm text-muted-foreground mb-5">
-              Te escribimos por WhatsApp para confirmar tu pedido.
+              Te contactamos por WhatsApp para coordinar el pago y envío.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700 block mb-1">Tu nombre *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: Juan Pérez"
-                  value={customerName}
+                <label className="text-sm font-medium text-gray-700 block mb-1">Nombre *</label>
+                <input type="text" required placeholder="Ej: Juan Pérez" value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-400"
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700 block mb-1">Tu WhatsApp *</label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="+57 300 123 4567"
-                  value={customerPhone}
+                <label className="text-sm font-medium text-gray-700 block mb-1">WhatsApp *</label>
+                <input type="tel" required placeholder="+57 300 123 4567" value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-400"
                 />
               </div>
 
-              {deliveryType === "delivery" && (
+              {/* Campos de envío nacional */}
+              {deliveryType === "envio_nacional" && (
+                <>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-1">Ciudad de destino *</label>
+                    <input type="text" required placeholder="Ej: Bogotá, Medellín, Barranquilla..." value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-1">Transportadora *</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(["interrapidisimo", "envia"] as const).map((c) => (
+                        <button key={c} type="button" onClick={() => setCarrier(c)}
+                          className={`py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
+                            carrier === c ? "border-brand-darker bg-brand-darker text-gold-400" : "border-stone-200 hover:border-stone-300 text-gray-700"
+                          }`}
+                        >
+                          {c === "interrapidisimo" ? "Interrapidísimo" : "Envía"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Dirección si es domicilio o envío */}
+              {(deliveryType === "domicilio" || deliveryType === "envio_nacional") && (
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1">Dirección de entrega *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Barrio, calle, número de casa..."
-                    value={address}
+                  <label className="text-sm font-medium text-gray-700 block mb-1">
+                    {deliveryType === "domicilio" ? "Dirección en Cartagena *" : "Dirección de entrega *"}
+                  </label>
+                  <input type="text" required placeholder="Barrio, calle, número de casa..." value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-400"
                   />
@@ -394,20 +419,20 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
                 <label className="text-sm font-medium text-gray-700 block mb-1">
                   ¿Alguna pregunta? <span className="text-gray-400 font-normal">(opcional)</span>
                 </label>
-                <textarea
-                  rows={2}
-                  placeholder="Ej: ¿Hacen envíos a Barranquilla?"
-                  value={message}
+                <textarea rows={2} placeholder="Ej: ¿Cuánto vale el domicilio? ¿Hay otro color?" value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-400 resize-none"
                 />
               </div>
 
+              {/* Métodos de pago */}
+              <div className="bg-stone-50 rounded-xl p-3 text-xs text-stone-500 text-center">
+                Coordinamos el pago por WhatsApp · 💳 Nequi · 🏦 Transferencia · 💵 Efectivo
+              </div>
+
               {error && <p className="text-sm text-red-500 text-center">{error}</p>}
 
-              <button
-                type="submit"
-                disabled={loading || !customerName.trim() || !customerPhone.trim() || (deliveryType === "delivery" && !address.trim())}
+              <button type="submit" disabled={loading || !formValid}
                 className="w-full bg-brand-darker hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed text-gold-400 font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</> : "Confirmar pedido"}
@@ -420,25 +445,21 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
         {step === "success" && (
           <div className="p-10 text-center max-w-sm mx-auto">
             <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h3 className="text-xl font-bold mb-2">¡Pedido enviado!</h3>
-            <p className="text-muted-foreground text-sm mb-2">
-              Recibimos tu solicitud. Te escribiremos por WhatsApp a{" "}
-              <span className="font-semibold text-gray-700">{customerPhone}</span> para confirmar.
+            <h3 className="text-xl font-bold mb-2">¡Pedido recibido!</h3>
+            <p className="text-muted-foreground text-sm mb-4">
+              Te escribiremos al <span className="font-semibold text-gray-700">{customerPhone}</span> para coordinar el pago y {deliveryType === "tienda" ? "la entrega en tienda" : "el envío"}.
             </p>
-            {deliveryType === "pickup" && (
-              <p className="text-xs text-stone-500 mb-6">
-                📍 Recuerda pasar por: <span className="font-medium">{STORE_ADDRESS}</span>
+            {deliveryType === "tienda" && (
+              <p className="text-xs text-stone-500 bg-stone-50 rounded-xl p-3 mb-5">
+                📍 {STORE_ADDRESS}
               </p>
             )}
-            {deliveryType === "delivery" && (
-              <p className="text-xs text-stone-500 mb-6">
-                🛵 Enviaremos a: <span className="font-medium">{address}</span>
+            {deliveryType === "envio_nacional" && (
+              <p className="text-xs text-stone-500 bg-stone-50 rounded-xl p-3 mb-5">
+                📦 Envío a <strong>{city}</strong> vía <strong>{carrier === "interrapidisimo" ? "Interrapidísimo" : "Envía"}</strong>
               </p>
             )}
-            <button
-              onClick={handleClose}
-              className="bg-brand-darker text-gold-400 font-semibold px-6 py-2.5 rounded-xl hover:bg-black transition-colors text-sm"
-            >
+            <button onClick={handleClose} className="bg-brand-darker text-gold-400 font-semibold px-6 py-2.5 rounded-xl hover:bg-black transition-colors text-sm">
               Seguir viendo el catálogo
             </button>
           </div>

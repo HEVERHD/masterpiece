@@ -9,7 +9,7 @@ function normalizePhone(phone: string): string {
 
 export async function POST(req: Request) {
   try {
-    const { productId, productName, size, price, customerName, customerPhone, deliveryType, address, message } =
+    const { productId, productName, size, price, customerName, customerPhone, deliveryType, address, city, carrier, message } =
       await req.json();
 
     if (!customerName || !customerPhone || !productName) {
@@ -59,9 +59,12 @@ export async function POST(req: Request) {
       });
     } else {
       const sizeText = size ? `📏 Talla: *${size}*\n` : "";
-      const deliveryText = deliveryType === "delivery"
-        ? `🛵 Entrega a domicilio\n📍 Dirección: ${address}\n`
-        : `🏪 Recoge en tienda\n📍 ${address}\n`;
+      const deliveryText =
+        deliveryType === "domicilio"
+          ? `🛵 Domicilio en Cartagena\n📍 ${address}\n`
+          : deliveryType === "envio_nacional"
+          ? `📦 Envío nacional vía *${carrier === "interrapidisimo" ? "Interrapidísimo" : "Envía"}*\n🏙️ Ciudad: ${city}\n📍 ${address}\n`
+          : `🏪 Recoge en tienda\n📍 ${address}\n`;
       const questionText = message ? `\n💬 "${message}"\n` : "";
       const body =
         `Hola ${customerName} 👋\n\n` +
