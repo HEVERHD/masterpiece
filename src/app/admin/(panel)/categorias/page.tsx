@@ -20,6 +20,7 @@ export default function CategoriasPage() {
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -36,6 +37,28 @@ export default function CategoriasPage() {
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
+
+  async function handleDelete(cat: Category) {
+    if (!confirm(`¿Eliminar "${cat.name}"?`)) return;
+    setDeleting(cat.id);
+    try {
+      const res = await fetch("/api/categorias", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: cat.id }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Error al eliminar");
+      }
+      toast.success(`"${cat.name}" eliminada`);
+      fetchCategories();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Error al eliminar");
+    } finally {
+      setDeleting(null);
+    }
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -129,11 +152,9 @@ export default function CategoriasPage() {
                   </div>
                   {cat._count.products === 0 && (
                     <button
-                      className="text-red-400 hover:text-red-600 p-1 transition-colors"
-                      onClick={async () => {
-                        if (!confirm(`¿Eliminar "${cat.name}"?`)) return;
-                        toast.info("Funcionalidad proxima");
-                      }}
+                      className="text-red-400 hover:text-red-600 p-1 transition-colors disabled:opacity-40"
+                      disabled={deleting === cat.id}
+                      onClick={() => handleDelete(cat)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>

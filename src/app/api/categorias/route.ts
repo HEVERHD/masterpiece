@@ -20,6 +20,33 @@ export async function GET() {
   }
 }
 
+export async function DELETE(request: Request) {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  try {
+    const { id } = await request.json();
+    if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 });
+
+    const category = await prisma.category.findUnique({
+      where: { id },
+      include: { _count: { select: { products: true } } },
+    });
+
+    if (!category) return NextResponse.json({ error: "Categoria no encontrada" }, { status: 404 });
+    if (category._count.products > 0) {
+      return NextResponse.json({ error: "No puedes eliminar una categoria con productos" }, { status: 409 });
+    }
+
+    await prisma.category.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Error al eliminar categoria" }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   const session = await auth();
   if (!session) {
