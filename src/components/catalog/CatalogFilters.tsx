@@ -56,42 +56,37 @@ export function CatalogFilters({ categories }: CatalogFiltersProps) {
         />
       </div>
 
-      {/* Category & Size filters row */}
-      <div className="flex gap-2 flex-wrap items-center">
-        {/* Category pills */}
-        <div className="flex gap-1.5 flex-wrap">
+      {/* Category pills — horizontal scroll */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        <button
+          onClick={() => updateFilter("category", "")}
+          className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+            !category
+              ? "bg-gold-500 text-brand-darker border-gold-500"
+              : "bg-transparent text-gold-400 border-gold-800/50 hover:border-gold-500"
+          }`}
+        >
+          Todo
+        </button>
+        {categories.map((cat) => (
           <button
-            onClick={() => updateFilter("category", "")}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
-              !category
+            key={cat.id}
+            onClick={() =>
+              updateFilter("category", category === cat.slug ? "" : cat.slug)
+            }
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+              category === cat.slug
                 ? "bg-gold-500 text-brand-darker border-gold-500"
                 : "bg-transparent text-gold-400 border-gold-800/50 hover:border-gold-500"
             }`}
           >
-            Todo
+            {cat.name}
           </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() =>
-                updateFilter("category", category === cat.slug ? "" : cat.slug)
-              }
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
-                category === cat.slug
-                  ? "bg-gold-500 text-brand-darker border-gold-500"
-                  : "bg-transparent text-gold-400 border-gold-800/50 hover:border-gold-500"
-              }`}
-            >
-              {cat.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Clear filters */}
+        ))}
         {hasFilters && (
           <button
             onClick={clearAll}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs text-gold-600 hover:text-gold-400 border border-dashed border-gold-800/50 hover:border-gold-600 transition-colors"
+            className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs text-gold-600 hover:text-gold-400 border border-dashed border-gold-800/50 hover:border-gold-600 transition-colors"
           >
             <X className="h-3 w-3" />
             Limpiar
