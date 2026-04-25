@@ -3,8 +3,12 @@ import twilio from "twilio";
 import { prisma } from "@/lib/prisma";
 
 function normalizePhone(phone: string): string {
-  const digits = phone.replace(/[\s\-().]/g, "");
-  return digits.startsWith("+") ? digits : `+${digits}`;
+  const digits = phone.replace(/[\s\-().+]/g, "");
+  // If it already has a full international prefix (starts with +), use as-is
+  const raw = phone.trim();
+  if (raw.startsWith("+")) return `+${digits}`;
+  // Default to Colombia (+57)
+  return `+57${digits}`;
 }
 
 export async function POST(req: Request) {
