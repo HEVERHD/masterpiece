@@ -30,21 +30,15 @@ export function ProductCard({ product }: { product: Product }) {
   const isLowStock = totalStock > 0 && totalStock <= 3;
   const availableSizes = product.sizes.filter((s) => s.stock > 0);
 
-  function shareWhatsApp(e: React.MouseEvent) {
+  function handlePedir(e: React.MouseEvent) {
     e.stopPropagation();
-    const url = `${window.location.origin}/?producto=${product.id}`;
-    const text =
-      `Hola! 👋 Vengo del catálogo de *Masterpiece CTG* y me interesa:\n\n` +
-      `👕 *${product.name}*\n` +
-      `💰 Precio: ${formatPrice(product.price)}\n\n` +
-      `¿Está disponible?`;
-    window.open(`https://wa.me/573150014381?text=${encodeURIComponent(text)}`, "_blank");
+    setModalOpen(true);
   }
 
   return (
     <>
       <div
-        className="group bg-white rounded-2xl overflow-hidden border border-stone-100 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex flex-col"
+        className="group bg-white rounded-xl overflow-hidden border border-stone-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex flex-col"
         onClick={() => setModalOpen(true)}
       >
         {/* Image */}
@@ -97,23 +91,19 @@ export function ProductCard({ product }: { product: Product }) {
             </div>
           )}
 
-          {/* Top badges */}
-          <div className="absolute top-2 left-2 right-2 flex justify-between items-start pointer-events-none">
-            {isLowStock && (
-              <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+          {/* Solo badge ÚLTIMAS sobre la imagen — limpio */}
+          {isLowStock && (
+            <div className="absolute top-2 left-2 pointer-events-none">
+              <span className="bg-amber-500 text-white text-[9px] font-bold tracking-wider px-2 py-0.5 rounded-full shadow-sm">
                 ÚLTIMAS
               </span>
-            )}
-            {!isLowStock && <span />}
-            <span className="bg-brand-darker/70 backdrop-blur-sm text-gold-400 text-[10px] font-semibold px-2 py-0.5 rounded-full">
-              {product.category.name}
-            </span>
-          </div>
+            </div>
+          )}
 
-          {/* Out of stock overlay */}
+          {/* Agotado overlay */}
           {totalStock === 0 && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-              <span className="bg-white text-black text-xs font-bold tracking-widest px-4 py-1.5 rounded-full uppercase">
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <span className="bg-white text-black text-[10px] font-bold tracking-widest px-3 py-1 rounded-full uppercase">
                 Agotado
               </span>
             </div>
@@ -121,37 +111,42 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Info */}
-        <div className="p-3 flex-1 flex flex-col gap-2">
+        <div className="p-3 flex-1 flex flex-col gap-1.5">
+          {/* Categoría como texto sutil */}
+          <span className="text-[10px] text-stone-400 font-medium uppercase tracking-wider">
+            {product.category.name}
+          </span>
+
           <p className="font-semibold text-[13px] leading-snug text-gray-800 group-hover:text-gold-700 transition-colors line-clamp-2 flex-1">
             {product.name}
           </p>
 
-          {/* Available sizes */}
+          {/* Tallas disponibles */}
           {availableSizes.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {availableSizes.slice(0, 5).map((s) => (
                 <span
                   key={s.size}
-                  className="text-[11px] px-1.5 py-0.5 rounded bg-stone-100 text-stone-500 font-medium"
+                  className="text-[10px] px-1.5 py-0.5 rounded-md bg-stone-100 text-stone-500 font-medium"
                 >
                   {s.size}
                 </span>
               ))}
               {availableSizes.length > 5 && (
-                <span className="text-[11px] text-stone-400 self-center">
+                <span className="text-[10px] text-stone-400 self-center">
                   +{availableSizes.length - 5}
                 </span>
               )}
             </div>
           )}
 
-          {/* Price + CTA */}
+          {/* Precio + CTA */}
           <div className="flex items-center justify-between pt-2 border-t border-stone-100 mt-auto">
-            <span className="font-bold text-base text-gold-600 tracking-tight">
+            <span className="font-bold text-sm text-gold-600 tracking-tight">
               {formatPrice(product.price)}
             </span>
             <button
-              onClick={shareWhatsApp}
+              onClick={handlePedir}
               disabled={totalStock === 0}
               className="flex items-center gap-1 bg-[#25D366] hover:bg-[#1ebe5d] disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-colors"
             >
