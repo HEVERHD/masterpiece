@@ -48,6 +48,16 @@ export async function POST(req: Request) {
     const to = `whatsapp:${normalizePhone(customerPhone)}`;
     const from = `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`;
 
+    const sizeText = size ? `📏 Talla: *${size}*\n` : "";
+    const deliveryText =
+      deliveryType === "domicilio"
+        ? `🛵 Domicilio en Cartagena\n📍 ${address}\n`
+        : deliveryType === "envio_nacional"
+        ? `📦 Envío nacional vía *${carrier === "interrapidisimo" ? "Interrapidísimo" : "Envía"}*\n🏙️ Ciudad: ${city}\n📍 ${address}\n`
+        : `🏪 Recoge en tienda\n📍 ${address}\n`;
+    const questionText = message ? `\n💬 "${message}"\n` : "";
+
+    // 1️⃣ Mensaje al cliente (confirmación de pedido)
     if (process.env.TWILIO_CONTENT_SID) {
       await client.messages.create({
         from,
@@ -62,15 +72,7 @@ export async function POST(req: Request) {
         }),
       });
     } else {
-      const sizeText = size ? `📏 Talla: *${size}*\n` : "";
-      const deliveryText =
-        deliveryType === "domicilio"
-          ? `🛵 Domicilio en Cartagena\n📍 ${address}\n`
-          : deliveryType === "envio_nacional"
-          ? `📦 Envío nacional vía *${carrier === "interrapidisimo" ? "Interrapidísimo" : "Envía"}*\n🏙️ Ciudad: ${city}\n📍 ${address}\n`
-          : `🏪 Recoge en tienda\n📍 ${address}\n`;
-      const questionText = message ? `\n💬 "${message}"\n` : "";
-      const body =
+      const clientBody =
         `Hola ${customerName} 👋\n\n` +
         `Recibimos tu pedido en *Masterpiece CTG*:\n\n` +
         `👕 *${productName}*\n` +
@@ -81,7 +83,23 @@ export async function POST(req: Request) {
         `\nEn breve te contactamos para coordinar.\n` +
         `— Masterpiece CTG, Cartagena 🇨🇴`;
 
-      await client.messages.create({ from, to, body });
+      await client.messages.create({ from, to, body: clientBody });
+    }
+
+    // 2️⃣ Notificación al admin (Ruben)
+    if (process.env.ADMIN_WHATSAPP) {
+      const adminTo = `whatsapp:${normalizePhone(process.env.ADMIN_WHATSAPP)}`;
+      const adminBody =
+        `🛒 *Nuevo pedido — Masterpiece CTG*\n\n` +
+        `👤 Cliente: *${customerName}*\n` +
+        `📞 Teléfono: ${normalizePhone(customerPhone)}\n\n` +
+        `👕 *${productName}*\n` +
+        sizeText +
+        `💰 ${price}\n` +
+        deliveryText +
+        questionText;
+
+      await client.messages.create({ from, to: adminTo, body: adminBody });
     }
 
     return NextResponse.json({ ok: true });
