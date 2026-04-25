@@ -78,6 +78,7 @@ export function ProductModal({ product, open, onClose }: ProductModalProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          productId: product.id,
           productName: product.name,
           size: selectedSize,
           price: formatPrice(product.price),
