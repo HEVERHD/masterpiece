@@ -4,11 +4,13 @@ import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+function initWebPush() {
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT!,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+  );
+}
 
 function normalizePhone(phone: string): string {
   const raw = phone.trim();
@@ -23,6 +25,7 @@ async function sendLowStockAlert(productName: string, size: string, remaining: n
 
   // Push al admin
   const subscriptions = await prisma.pushSubscription.findMany();
+  initWebPush();
   await Promise.allSettled(
     subscriptions.map((sub) =>
       webpush.sendNotification(
