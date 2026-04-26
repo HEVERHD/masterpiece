@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingBag, CheckCircle2, XCircle, Truck, Clock } from "lucide-react";
@@ -178,7 +177,7 @@ export default function PedidosPage() {
                   </p>
                   <p className="text-muted-foreground">{deliveryLabel(order)}</p>
                   {order.message && (
-                    <p className="italic text-muted-foreground">💬 "{order.message}"</p>
+                    <p className="italic text-muted-foreground">💬 &ldquo;{order.message}&rdquo;</p>
                   )}
                 </div>
 
