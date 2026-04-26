@@ -54,3 +54,38 @@ model ProductSize {
   @@unique([productId, size])
   @@index([productId])
 }
+
+enum OrderStatus {
+  PENDIENTE
+  PAGADO
+  ENVIADO
+  CANCELADO
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  productId     String?
+  productName   String
+  size          String?
+  price         String
+  customerName  String
+  customerPhone String
+  deliveryType  String
+  address       String?
+  city          String?
+  carrier       String?
+  message       String?
+  status        OrderStatus @default(PENDIENTE)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([status])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+}

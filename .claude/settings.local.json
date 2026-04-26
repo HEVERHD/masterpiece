@@ -6,7 +6,9 @@
       "Bash(mv dashboard:*)",
       "Bash(mv categorias:*)",
       "Bash(mv productos:*)",
-      "Bash(mv page.tsx \"\\(panel\\)/page.tsx\")"
+      "Bash(mv page.tsx \"\\(panel\\)/page.tsx\")",
+      "Bash(npm install:*)",
+      "Bash(npx prisma:*)"
     ]
   }
 }

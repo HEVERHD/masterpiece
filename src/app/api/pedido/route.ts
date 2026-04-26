@@ -1,53 +1,65 @@
 import { NextResponse } from "next/server";
 import twilio from "twilio";
+import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
 
+webpush.setVapidDetails(
+  process.env.VAPID_SUBJECT!,
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+  process.env.VAPID_PRIVATE_KEY!
+);
+
 function normalizePhone(phone: string): string {
-  const digits = phone.replace(/[\s\-().+]/g, "");
-  // If it already has a full international prefix (starts with +), use as-is
   const raw = phone.trim();
+  const digits = phone.replace(/[\s\-().+]/g, "");
   if (raw.startsWith("+")) return `+${digits}`;
-  // Default to Colombia (+57)
   return `+57${digits}`;
+}
+
+function baseUrl() {
+  return process.env.NEXT_PUBLIC_URL ?? "https://masterpiece-brown.vercel.app";
 }
 
 export async function POST(req: Request) {
   try {
-    const { productId, productName, size, price, customerName, customerPhone, deliveryType, address, city, carrier, message } =
-      await req.json();
+    const {
+      productId,
+      productName,
+      size,
+      price,
+      customerName,
+      customerPhone,
+      deliveryType,
+      address,
+      city,
+      carrier,
+      message,
+    } = await req.json();
 
     if (!customerName || !customerPhone || !productName) {
       return NextResponse.json({ error: "Faltan datos requeridos" }, { status: 400 });
     }
 
-    // Decrementar stock de la talla seleccionada
-    if (productId && size) {
-      const productSize = await prisma.productSize.findUnique({
-        where: { productId_size: { productId, size } },
-      });
+    // Guardar pedido en BD (stock NO se toca hasta que admin confirme pago)
+    const order = await prisma.order.create({
+      data: {
+        productId: productId ?? null,
+        productName,
+        size: size ?? null,
+        price,
+        customerName,
+        customerPhone: normalizePhone(customerPhone),
+        deliveryType,
+        address: address ?? null,
+        city: city ?? null,
+        carrier: carrier ?? null,
+        message: message ?? null,
+      },
+    });
 
-      if (!productSize || productSize.stock <= 0) {
-        return NextResponse.json(
-          { error: "Lo sentimos, esta talla se agotó justo ahora." },
-          { status: 409 }
-        );
-      }
+    const trackingUrl = `${baseUrl()}/pedido/${order.id}`;
 
-      await prisma.productSize.update({
-        where: { productId_size: { productId, size } },
-        data: { stock: { decrement: 1 } },
-      });
-    }
-
-    // Enviar WhatsApp
-    const client = twilio(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN
-    );
-
-    const to = `whatsapp:${normalizePhone(customerPhone)}`;
-    const from = `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`;
-
+    // Construir textos
     const sizeText = size ? `📏 Talla: *${size}*\n` : "";
     const deliveryText =
       deliveryType === "domicilio"
@@ -57,9 +69,16 @@ export async function POST(req: Request) {
         : `🏪 Recoge en tienda\n📍 ${address}\n`;
     const questionText = message ? `\n💬 "${message}"\n` : "";
 
-    // 1️⃣ Mensaje al cliente (confirmación de pedido)
+    const twilioClient = twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
+    const from = `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`;
+
+    // 1️⃣ WhatsApp al cliente (con link de seguimiento)
+    const to = `whatsapp:${normalizePhone(customerPhone)}`;
     if (process.env.TWILIO_CONTENT_SID) {
-      await client.messages.create({
+      await twilioClient.messages.create({
         from,
         to,
         contentSid: process.env.TWILIO_CONTENT_SID,
@@ -80,29 +99,44 @@ export async function POST(req: Request) {
         `💰 ${price}\n` +
         deliveryText +
         questionText +
-        `\nEn breve te contactamos para coordinar.\n` +
+        `\n🔗 Sigue tu pedido aquí:\n${trackingUrl}\n` +
+        `\nEn breve te contactamos para coordinar el pago.\n` +
         `— Masterpiece CTG, Cartagena 🇨🇴`;
-
-      await client.messages.create({ from, to, body: clientBody });
+      await twilioClient.messages.create({ from, to, body: clientBody });
     }
 
-    // 2️⃣ Notificación al admin (Ruben)
+    // 2️⃣ WhatsApp al admin
     if (process.env.ADMIN_WHATSAPP) {
       const adminTo = `whatsapp:${normalizePhone(process.env.ADMIN_WHATSAPP)}`;
       const adminBody =
         `🛒 *Nuevo pedido — Masterpiece CTG*\n\n` +
-        `👤 Cliente: *${customerName}*\n` +
-        `📞 Teléfono: ${normalizePhone(customerPhone)}\n\n` +
+        `👤 *${customerName}*\n` +
+        `📞 ${normalizePhone(customerPhone)}\n\n` +
         `👕 *${productName}*\n` +
         sizeText +
         `💰 ${price}\n` +
         deliveryText +
-        questionText;
-
-      await client.messages.create({ from, to: adminTo, body: adminBody });
+        questionText +
+        `\n📋 ${trackingUrl}`;
+      await twilioClient.messages.create({ from, to: adminTo, body: adminBody });
     }
 
-    return NextResponse.json({ ok: true });
+    // 3️⃣ Push notification al admin
+    const subscriptions = await prisma.pushSubscription.findMany();
+    await Promise.allSettled(
+      subscriptions.map((sub) =>
+        webpush.sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          JSON.stringify({
+            title: "🛒 Nuevo pedido",
+            body: `${customerName} quiere ${productName}${size ? ` — ${size}` : ""}`,
+            url: "/admin/pedidos",
+          })
+        )
+      )
+    );
+
+    return NextResponse.json({ ok: true, orderId: order.id });
   } catch (err) {
     console.error("[PEDIDO ERROR]", err);
     return NextResponse.json({ error: "No se pudo enviar el pedido" }, { status: 500 });

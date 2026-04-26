@@ -10,14 +10,17 @@ import {
   LogOut,
   Menu,
   X,
+  ShoppingBag,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import PushSubscribeButton from "./PushSubscribeButton";
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/pedidos", label: "Pedidos", icon: ShoppingBag },
   { href: "/admin/productos", label: "Productos", icon: Package },
   { href: "/admin/categorias", label: "Categorias", icon: Tag },
 ];
@@ -62,13 +65,16 @@ export function AdminNav() {
         </nav>
 
         <div className="p-4 border-t border-gold-800/30">
-          <Link
-            href="/"
-            target="_blank"
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gold-500 hover:text-gold-300 transition-colors mb-2"
-          >
-            <span>Ver catalogo publico →</span>
-          </Link>
+          <div className="flex items-center justify-between mb-2 px-1">
+            <Link
+              href="/"
+              target="_blank"
+              className="text-sm text-gold-500 hover:text-gold-300 transition-colors"
+            >
+              Ver catalogo →
+            </Link>
+            <PushSubscribeButton />
+          </div>
           <button
             onClick={() => signOut({ callbackUrl: "/admin/login" })}
             className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm text-gold-600 hover:bg-red-900/30 hover:text-red-400 transition-colors"
@@ -88,14 +94,17 @@ export function AdminNav() {
           height={36}
           className="h-8 w-auto object-contain"
         />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-gold-400 hover:bg-gold-900/30"
-          onClick={() => setOpen(!open)}
-        >
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
+        <div className="flex items-center gap-2">
+          <PushSubscribeButton />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-gold-400 hover:bg-gold-900/30"
+            onClick={() => setOpen(!open)}
+          >
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
       </div>
 
       {/* Mobile menu */}
