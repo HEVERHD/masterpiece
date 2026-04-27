@@ -371,14 +371,18 @@ export function CartSheet() {
                 onClick={async () => {
                   setPagoLoading(true);
                   try {
-                    await fetch("/api/medios-pago", {
+                    const res = await fetch("/api/medios-pago", {
                       method:  "POST",
                       headers: { "Content-Type": "application/json" },
                       body:    JSON.stringify({ phone: customerPhone, customerName }),
                     });
+                    if (!res.ok) {
+                      const data = await res.json().catch(() => ({}));
+                      throw new Error(data.error ?? "Error al enviar");
+                    }
                     setPagoSent(true);
-                  } catch {
-                    toast.error("No se pudo enviar. Intenta de nuevo.");
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "No se pudo enviar");
                   } finally {
                     setPagoLoading(false);
                   }

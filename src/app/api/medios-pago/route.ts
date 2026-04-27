@@ -54,7 +54,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[MEDIOS PAGO ERROR]", err);
-    return NextResponse.json({ error: "No se pudo enviar" }, { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[MEDIOS PAGO ERROR]", msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
