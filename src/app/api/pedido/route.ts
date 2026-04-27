@@ -90,16 +90,29 @@ export async function POST(req: Request) {
 
       // Mensaje al cliente
       if (process.env.TWILIO_CONTENT_SID) {
+        const isMulti = Array.isArray(items) && items.length > 1;
+        // Para multi-artículos: listamos cada item en {{2}} y dejamos {{3}} vacío
+        const var2 = isMulti
+          ? (items as Array<{ productName: string; size: string | null; price: string }>)
+              .map((it) => `${it.productName}${it.size ? ` (T.${it.size})` : ""} — ${it.price}`)
+              .join("\n")
+          : productName;
+        const var3 = isMulti ? " " : (size ?? "Única");
+        // {{5}} lleva el link de rastreo (+ pregunta del cliente si existe)
+        const var5 = message
+          ? `${trackingUrl}\n💬 "${message}"`
+          : trackingUrl;
+
         await twilioClient.messages.create({
           from,
           to,
           contentSid: process.env.TWILIO_CONTENT_SID,
           contentVariables: JSON.stringify({
             "1": customerName,
-            "2": productName,
-            "3": size ?? "Única",
+            "2": var2,
+            "3": var3,
             "4": price,
-            "5": message || " ",
+            "5": var5,
           }),
         });
       } else {
