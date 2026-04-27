@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import {
   X, ArrowLeft, Trash2, ShoppingCart, CheckCircle2,
-  Loader2, Bike, Store, MapPin, PackageIcon,
+  Loader2, Bike, Store, MapPin, PackageIcon, CreditCard,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/utils";
@@ -32,6 +32,8 @@ export function CartSheet() {
   const [loading, setLoading]           = useState(false);
   const [error, setError]               = useState<string | null>(null);
   const [orderId, setOrderId]           = useState<string | null>(null);
+  const [pagoSent,  setPagoSent]        = useState(false);
+  const [pagoLoading, setPagoLoading]   = useState(false);
 
   // Reset view when sheet closes
   useEffect(() => {
@@ -359,21 +361,43 @@ export function CartSheet() {
             <div>
               <h3 className="text-xl font-bold mb-1">¡Pedido recibido!</h3>
               <p className="text-muted-foreground text-sm">
-                Te escribiremos al <span className="font-semibold text-gray-700">{customerPhone}</span> para coordinar el pago.
+                Solicita los métodos de pago y te los enviamos directo a tu WhatsApp.
               </p>
             </div>
 
-            <a
-              href={`https://wa.me/${ADMIN_WA}?text=${waText}`}
-              target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition-colors text-sm"
-            >
-              <svg className="w-4 h-4 fill-white flex-shrink-0" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.859L.057 23.75a.5.5 0 0 0 .614.612l5.975-1.56A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.946 9.946 0 0 1-5.127-1.416l-.367-.217-3.793.993 1.01-3.688-.239-.381A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-              </svg>
-              Enviar comprobante de pago
-            </a>
+            {!pagoSent ? (
+              <button
+                disabled={pagoLoading}
+                onClick={async () => {
+                  setPagoLoading(true);
+                  try {
+                    await fetch("/api/medios-pago", {
+                      method:  "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body:    JSON.stringify({ phone: customerPhone, customerName }),
+                    });
+                    setPagoSent(true);
+                  } catch {
+                    toast.error("No se pudo enviar. Intenta de nuevo.");
+                  } finally {
+                    setPagoLoading(false);
+                  }
+                }}
+                className="flex items-center justify-center gap-2 w-full bg-[#1a1209] hover:bg-black disabled:opacity-50 text-amber-400 font-semibold py-3 rounded-xl transition-colors text-sm"
+              >
+                {pagoLoading
+                  ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
+                  : <><CreditCard className="h-4 w-4" /> Solicitar medio de pago</>
+                }
+              </button>
+            ) : (
+              <div className="w-full bg-green-50 border border-green-200 rounded-xl p-4 space-y-1">
+                <p className="font-semibold text-green-700 text-sm">¡Revisa tu WhatsApp!</p>
+                <p className="text-xs text-green-600">
+                  Te enviamos todos los métodos de pago al <span className="font-semibold">{customerPhone}</span>.
+                </p>
+              </div>
+            )}
 
             {orderId && (
               <a href={`/pedido/${orderId}`} target="_blank" rel="noopener noreferrer"
