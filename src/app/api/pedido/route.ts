@@ -99,7 +99,7 @@ export async function POST(req: Request) {
             "2": productName,
             "3": size ?? "Única",
             "4": price,
-            "5": message || "",
+            "5": message || " ",
           }),
         });
       } else {
