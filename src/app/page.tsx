@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { CatalogFilters } from "@/components/catalog/CatalogFilters";
-import { Package, ShoppingBag } from "lucide-react";
+import { CartButton } from "@/components/catalog/CartButton";
+import { Package } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -60,13 +61,8 @@ export default async function CatalogPage({
                 priority
               />
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-gold-400">
-                <ShoppingBag className="h-5 w-5" />
-                <span className="text-sm font-medium">
-                  {products.length} disponible{products.length !== 1 ? "s" : ""}
-                </span>
-              </div>
+            <div className="flex items-center gap-2">
+              <CartButton />
               <Link
                 href="/admin/login"
                 className="text-xs text-gold-700 hover:text-gold-500 transition-colors px-2 py-1 rounded border border-gold-800/40 hover:border-gold-700/60"

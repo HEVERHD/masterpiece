@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import { CartProvider } from "@/context/CartContext";
+import { CartSheet } from "@/components/catalog/CartSheet";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -36,7 +38,10 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ServiceWorkerRegister />
-        {children}
+        <CartProvider>
+          {children}
+          <CartSheet />
+        </CartProvider>
         <Toaster richColors position="top-right" />
       </body>
     </html>

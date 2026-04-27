@@ -29,6 +29,7 @@ export async function POST(req: Request) {
       productName,
       size,
       price,
+      items,        // array de artículos (carrito multi-item)
       customerName,
       customerPhone,
       deliveryType,
@@ -45,24 +46,31 @@ export async function POST(req: Request) {
     // Guardar pedido en BD (stock NO se toca hasta que admin confirme pago)
     const order = await prisma.order.create({
       data: {
-        productId: productId ?? null,
+        productId:     productId ?? null,
         productName,
-        size: size ?? null,
+        size:          size ?? null,
         price,
+        items:         items ?? undefined,
         customerName,
         customerPhone: normalizePhone(customerPhone),
         deliveryType,
-        address: address ?? null,
-        city: city ?? null,
-        carrier: carrier ?? null,
-        message: message ?? null,
+        address:       address ?? null,
+        city:          city ?? null,
+        carrier:       carrier ?? null,
+        message:       message ?? null,
       },
     });
 
     const trackingUrl = `${baseUrl()}/pedido/${order.id}`;
 
-    // Construir textos
-    const sizeText = size ? `📏 Talla: *${size}*\n` : "";
+    // Construir texto de artículos
+    const multiItems = Array.isArray(items) && items.length > 1;
+    const itemsText  = multiItems
+      ? (items as Array<{ productName: string; size: string | null; price: string }>)
+          .map((it, i) => `${i + 1}. *${it.productName}*${it.size ? ` — ${it.size}` : ""} — ${it.price}`)
+          .join("\n") + "\n"
+      : `👕 *${productName}*\n${size ? `📏 Talla: *${size}*\n` : ""}`;
+
     const deliveryText =
       deliveryType === "domicilio"
         ? `🛵 Domicilio en Cartagena\n📍 ${address}\n`
@@ -96,8 +104,7 @@ export async function POST(req: Request) {
       const clientBody =
         `Hola ${customerName} 👋\n\n` +
         `Recibimos tu pedido en *Masterpiece CTG*:\n\n` +
-        `👕 *${productName}*\n` +
-        sizeText +
+        itemsText +
         `💰 ${price}\n` +
         deliveryText +
         questionText +
@@ -114,8 +121,7 @@ export async function POST(req: Request) {
         `🛒 *Nuevo pedido — Masterpiece CTG*\n\n` +
         `👤 *${customerName}*\n` +
         `📞 ${normalizePhone(customerPhone)}\n\n` +
-        `👕 *${productName}*\n` +
-        sizeText +
+        itemsText +
         `💰 ${price}\n` +
         deliveryText +
         questionText +
