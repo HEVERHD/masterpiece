@@ -11,6 +11,7 @@ import {
   Menu,
   X,
   ShoppingBag,
+  Eye,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -65,13 +66,14 @@ export function AdminNav() {
         </nav>
 
         <div className="p-4 border-t border-gold-800/30">
-          <div className="flex items-center justify-between mb-2 px-1">
+          <div className="flex items-center justify-between mb-2">
             <Link
               href="/"
               target="_blank"
-              className="text-sm text-gold-500 hover:text-gold-300 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gold-400 hover:bg-gold-900/30 hover:text-gold-100 transition-colors flex-1"
             >
-              Ver catalogo →
+              <Eye className="h-4 w-4" />
+              Ver como cliente
             </Link>
             <PushSubscribeButton />
           </div>
@@ -133,9 +135,10 @@ export function AdminNav() {
               href="/"
               target="_blank"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-gold-500"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gold-400 hover:text-gold-100"
             >
-              Ver catalogo publico →
+              <Eye className="h-4 w-4" />
+              Ver como cliente
             </Link>
             <button
               onClick={() => signOut({ callbackUrl: "/admin/login" })}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { MessageCircle, Package, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
@@ -16,6 +17,7 @@ interface Product {
   name: string;
   description: string | null;
   price: number;
+  createdAt: string | Date;
   category: { name: string };
   images: { url: string }[];
   sizes: ProductSize[];
@@ -23,23 +25,21 @@ interface Product {
 
 export function ProductCard({ product }: { product: Product }) {
   const [modalOpen, setModalOpen] = useState(false);
-  const [imgIndex, setImgIndex] = useState(0);
+  const [imgIndex, setImgIndex]   = useState(0);
 
-  const totalStock = product.sizes.reduce((sum, s) => sum + s.stock, 0);
-  const hasImages = product.images.length > 0;
-  const isLowStock = totalStock > 0 && totalStock <= 3;
+  const totalStock     = product.sizes.reduce((sum, s) => sum + s.stock, 0);
+  const hasImages      = product.images.length > 0;
+  const isLowStock     = totalStock > 0 && totalStock <= 3;
   const availableSizes = product.sizes.filter((s) => s.stock > 0);
 
-  function handlePedir(e: React.MouseEvent) {
-    e.stopPropagation();
-    setModalOpen(true);
-  }
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const isNew        = new Date(product.createdAt) >= sevenDaysAgo;
 
   return (
     <>
-      <div
-        className="group bg-white rounded-xl overflow-hidden border border-stone-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex flex-col"
-        onClick={() => setModalOpen(true)}
+      <Link
+        href={`/producto/${product.id}`}
+        className="group bg-white rounded-xl overflow-hidden border border-stone-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex flex-col"
       >
         {/* Image */}
         <div className="relative aspect-[3/4] bg-stone-50 overflow-hidden">
@@ -56,6 +56,7 @@ export function ProductCard({ product }: { product: Product }) {
                 <>
                   <button
                     onClick={(e) => {
+                      e.preventDefault();
                       e.stopPropagation();
                       setImgIndex((i) => (i === 0 ? product.images.length - 1 : i - 1));
                     }}
@@ -65,6 +66,7 @@ export function ProductCard({ product }: { product: Product }) {
                   </button>
                   <button
                     onClick={(e) => {
+                      e.preventDefault();
                       e.stopPropagation();
                       setImgIndex((i) => (i === product.images.length - 1 ? 0 : i + 1));
                     }}
@@ -91,14 +93,19 @@ export function ProductCard({ product }: { product: Product }) {
             </div>
           )}
 
-          {/* Solo badge ÚLTIMAS sobre la imagen — limpio */}
-          {isLowStock && (
-            <div className="absolute top-2 left-2 pointer-events-none">
+          {/* Badges */}
+          <div className="absolute top-2 left-2 flex flex-col gap-1 pointer-events-none">
+            {isNew && totalStock > 0 && (
+              <span className="bg-emerald-500 text-white text-[9px] font-bold tracking-wider px-2 py-0.5 rounded-full shadow-sm">
+                NUEVO
+              </span>
+            )}
+            {isLowStock && (
               <span className="bg-amber-500 text-white text-[9px] font-bold tracking-wider px-2 py-0.5 rounded-full shadow-sm">
                 ÚLTIMAS
               </span>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Agotado overlay */}
           {totalStock === 0 && (
@@ -112,7 +119,6 @@ export function ProductCard({ product }: { product: Product }) {
 
         {/* Info */}
         <div className="p-3 flex-1 flex flex-col gap-1.5">
-          {/* Categoría como texto sutil */}
           <span className="text-[10px] text-stone-400 font-medium uppercase tracking-wider">
             {product.category.name}
           </span>
@@ -121,7 +127,6 @@ export function ProductCard({ product }: { product: Product }) {
             {product.name}
           </p>
 
-          {/* Tallas disponibles */}
           {availableSizes.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {availableSizes.slice(0, 5).map((s) => (
@@ -140,13 +145,16 @@ export function ProductCard({ product }: { product: Product }) {
             </div>
           )}
 
-          {/* Precio + CTA */}
           <div className="flex items-center justify-between pt-2 border-t border-stone-100 mt-auto">
             <span className="font-bold text-sm text-gold-600 tracking-tight">
               {formatPrice(product.price)}
             </span>
             <button
-              onClick={handlePedir}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setModalOpen(true);
+              }}
               disabled={totalStock === 0}
               className="flex items-center gap-1 bg-[#25D366] hover:bg-[#1ebe5d] disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-colors"
             >
@@ -155,7 +163,7 @@ export function ProductCard({ product }: { product: Product }) {
             </button>
           </div>
         </div>
-      </div>
+      </Link>
 
       <ProductModal
         product={product}

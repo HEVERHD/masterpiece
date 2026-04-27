@@ -76,6 +76,7 @@ model Order {
   carrier       String?
   message       String?
   items         Json?
+  adminNote     String?
   status        OrderStatus @default(PENDIENTE)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -89,4 +90,16 @@ model PushSubscription {
   p256dh    String
   auth      String
   createdAt DateTime @default(now())
+}
+
+model StockAlert {
+  id          String   @id @default(cuid())
+  productId   String
+  productName String
+  size        String?
+  phone       String
+  notified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([productId])
 }
