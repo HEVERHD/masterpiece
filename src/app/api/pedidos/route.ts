@@ -64,7 +64,7 @@ async function sendCustomerUpdate(
       `👕 *${order.productName}*${sizeText}\n` +
       `💰 ${order.price}\n\n` +
       `${nextStep}\n\n` +
-      `🔗 Sigue el estado de tu pedido:\n${trackingUrl}\n\n` +
+      (!isTienda ? `🔗 Sigue el estado de tu pedido:\n${trackingUrl}\n\n` : "") +
       `— Masterpiece CTG 🇨🇴`;
 
   } else if (isTienda) {

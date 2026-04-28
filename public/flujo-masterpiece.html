@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Flujo Completo — Masterpiece CTG</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #fff;
+      color: #1a1209;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .page {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 48px 40px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 3px solid #f59e0b;
+      padding-bottom: 20px;
+      margin-bottom: 36px;
+    }
+    .header img { height: 44px; width: auto; }
+    .header-text h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #1a1209;
+    }
+    .header-text p {
+      font-size: 12px;
+      color: #78716c;
+      margin-top: 2px;
+    }
+
+    /* Section */
+    .section {
+      margin-bottom: 32px;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #d97706;
+      margin-bottom: 12px;
+    }
+
+    /* Role header */
+    .role-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #1a1209;
+      color: #fbbf24;
+      padding: 10px 16px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+    }
+    .role-header .emoji { font-size: 18px; }
+    .role-header h2 { font-size: 15px; font-weight: 700; }
+
+    /* Steps */
+    .steps { display: flex; flex-direction: column; gap: 10px; }
+
+    .step {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #e7e5e4;
+      background: #fafaf9;
+    }
+    .step-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #f59e0b;
+      color: #1a1209;
+      font-weight: 800;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .step-body {}
+    .step-body strong {
+      font-size: 13px;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .step-body p { color: #44403c; font-size: 12.5px; }
+
+    /* Sub-bullets */
+    .sub { margin-top: 6px; padding-left: 2px; }
+    .sub li {
+      list-style: none;
+      padding: 2px 0;
+      color: #57534e;
+      font-size: 12px;
+    }
+    .sub li::before { content: "→ "; color: #d97706; font-weight: 600; }
+
+    /* Auto badge */
+    .auto {
+      display: inline-block;
+      background: #dcfce7;
+      color: #16a34a;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 99px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* Delivery types */
+    .delivery-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .delivery-card {
+      background: #fff;
+      border: 1px solid #e7e5e4;
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .delivery-card .icon { font-size: 18px; margin-bottom: 4px; }
+    .delivery-card strong { font-size: 12px; font-weight: 700; display: block; }
+    .delivery-card p { font-size: 11px; color: #78716c; margin-top: 2px; }
+
+    /* WA message box */
+    .wa-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #166534;
+      font-family: monospace;
+      white-space: pre-line;
+      line-height: 1.7;
+    }
+    .wa-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #16a34a;
+      margin-bottom: 6px;
+    }
+
+    /* Admin table */
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 12.5px;
+    }
+    .admin-table th {
+      background: #1a1209;
+      color: #fbbf24;
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 11px;
+    }
+    .admin-table th:first-child { border-radius: 8px 0 0 0; }
+    .admin-table th:last-child  { border-radius: 0 8px 0 0; }
+    .admin-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e7e5e4;
+      color: #44403c;
+    }
+    .admin-table tr:last-child td { border-bottom: none; }
+    .admin-table tr:nth-child(even) td { background: #fafaf9; }
+    .admin-table td:first-child { font-weight: 600; color: #1a1209; font-family: monospace; font-size: 12px; }
+
+    /* Footer */
+    .footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid #e7e5e4;
+      text-align: center;
+      font-size: 11px;
+      color: #a8a29e;
+    }
+
+    /* Divider */
+    .divider { border: none; border-top: 1px dashed #e7e5e4; margin: 24px 0; }
+
+    @media print {
+      body { font-size: 12px; }
+      .page { padding: 32px 28px; }
+      .step { break-inside: avoid; }
+      .section { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <img src="/logo.png" alt="Masterpiece CTG" />
+    <div class="header-text">
+      <h1>Flujo Completo del Sistema</h1>
+      <p>Masterpiece CTG — Cartagena, Colombia · Abril 2026</p>
+    </div>
+  </div>
+
+  <!-- CLIENTE -->
+  <div class="section">
+    <div class="section-title">Experiencia del cliente</div>
+    <div class="role-header">
+      <span class="emoji">🛍️</span>
+      <h2>Lo que hace el cliente</h2>
+    </div>
+
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Catálogo</strong>
+          <p>Entra a la tienda y navega los productos. Puede filtrar por categoría, precio, ordenar y buscar en tiempo real sin recargar la página.</p>
+          <ul class="sub">
+            <li>Si hay pocas unidades → ve "⚡ Pocas unidades disponibles"</li>
+            <li>Si está agotado → puede dejar su WhatsApp para que le avisen cuando haya stock</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Página de producto</strong>
+          <p>Toca un producto y va a su página propia (URL compartible por Instagram/WhatsApp). Puede hacer zoom a las fotos, elegir talla y ver productos relacionados.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Elige tipo de entrega</strong>
+          <div class="delivery-grid">
+            <div class="delivery-card">
+              <div class="icon">🛵</div>
+              <strong>Domicilio</strong>
+              <p>Solo Cartagena. Pide dirección.</p>
+            </div>
+            <div class="delivery-card">
+              <div class="icon">📦</div>
+              <strong>Envío nacional</strong>
+              <p>Interrapidísimo o Envía. Pide ciudad, dirección y transportadora.</p>
+            </div>
+            <div class="delivery-card">
+              <div class="icon">🏪</div>
+              <strong>Recoger en tienda</strong>
+              <p>Sin costo. Muestra mapa de ubicación.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <strong>Datos y confirmación</strong>
+          <p>Llena nombre y WhatsApp. Confirma el pedido — se crea en la base de datos y Rubén recibe una notificación push en el panel.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <strong>Pantalla de éxito — realiza el pago</strong>
+          <p>Ve los métodos de pago con logos. Toca el número para copiarlo. Toca "Abrir app" para ir directo a Nequi, Bancolombia o Daviplata.</p>
+          <ul class="sub">
+            <li>Toca "Enviar comprobante a Masterpiece" → abre WhatsApp con mensaje prellenado al número de Rubén</li>
+            <li>Ve aviso: le llegará confirmación por WhatsApp desde otro número (automatizado)</li>
+            <li>Puede ver el estado de su pedido en /pedido/[id]</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ADMIN -->
+  <div class="section">
+    <div class="section-title">Panel de administración</div>
+    <div class="role-header">
+      <span class="emoji">👨‍💼</span>
+      <h2>Lo que hace Rubén (admin)</h2>
+    </div>
+
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num">6</div>
+        <div class="step-body">
+          <strong>Recibe el comprobante</strong>
+          <p>El cliente le envía el comprobante al WhatsApp personal de Rubén (573150014381). Rubén entra al panel en /admin/pedidos.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">7</div>
+        <div class="step-body">
+          <strong>Revisa el pedido</strong>
+          <p>Ve todos los pedidos ordenados por fecha. Puede buscar por nombre o teléfono del cliente, añadir notas internas privadas y exportar a CSV.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">8</div>
+        <div class="step-body">
+          <strong>Confirma el pago → PAGADO <span class="auto">AUTOMÁTICO</span></strong>
+          <p>Toca "Confirmar pago". El sistema hace automáticamente:</p>
+          <ul class="sub">
+            <li>Descuenta 1 unidad del stock</li>
+            <li>Si el stock queda en 0 o 1 → alerta push + WhatsApp a Rubén</li>
+            <li>Envía WhatsApp al cliente con confirmación + link del estado del pedido</li>
+          </ul>
+          <div class="wa-label" style="margin-top:10px">Mensaje que recibe el cliente</div>
+          <div class="wa-box">Hola [nombre] 👋
+
+✅ <strong>¡Pago confirmado!</strong>
+
+Tu pedido en Masterpiece CTG está siendo preparado:
+👕 [producto] · Talla [talla]
+💰 [precio]
+
+[Mensaje según tipo de entrega]
+
+🔗 Sigue el estado de tu pedido:
+https://masterpiece.../pedido/[id]
+
+— Masterpiece CTG 🇨🇴</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">9</div>
+        <div class="step-body">
+          <strong>Despacha el pedido → ENVIADO <span class="auto">AUTOMÁTICO</span></strong>
+          <p>Toca "Marcar como enviado" o "Listo para recoger". El sistema envía un WhatsApp diferente según el tipo de entrega:</p>
+          <ul class="sub">
+            <li>🏪 Tienda → "¡Ya puedes venir a recogerlo, está listo! Te esperamos 😊" + link catálogo</li>
+            <li>🛵 Domicilio → "¡Tu pedido está en camino! El domicilio ya va en ruta" + link catálogo</li>
+            <li>📦 Envío nacional → "¡Fue despachado! Va por [transportadora] a [ciudad]" + link estado + link catálogo</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- PANEL SECTIONS -->
+  <div class="section">
+    <div class="section-title">Secciones del panel admin</div>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Ruta</th>
+          <th>Qué permite hacer</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>/admin/dashboard</td>
+          <td>Resumen general del negocio</td>
+        </tr>
+        <tr>
+          <td>/admin/pedidos</td>
+          <td>Ver, buscar, filtrar pedidos · Confirmar pago · Marcar enviado · Cancelar · Notas internas · Exportar CSV</td>
+        </tr>
+        <tr>
+          <td>/admin/productos</td>
+          <td>Crear y editar productos · Subir fotos · Manejar tallas y stock · Paginación (20 por página)</td>
+        </tr>
+        <tr>
+          <td>/admin/categorias</td>
+          <td>Crear y editar categorías del catálogo</td>
+        </tr>
+        <tr>
+          <td>/admin/metodos-pago</td>
+          <td>Agregar, editar y reordenar métodos de pago · Configurar logo y deep link de la app</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    Masterpiece CTG · Sistema de pedidos · Generado el 28 de abril de 2026
+  </div>
+
+</div>
+</body>
+</html>
