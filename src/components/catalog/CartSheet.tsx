@@ -434,26 +434,34 @@ export function CartSheet() {
                               </a>
                             )}
                           </div>
-                          <div className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-stone-200">
-                            <div className="min-w-0">
+                          <button
+                            onClick={() => copyText(m.value!)}
+                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-colors active:scale-[0.98] ${
+                              copied === m.value
+                                ? "bg-green-50 border-green-200"
+                                : "bg-white border-stone-200 hover:bg-amber-50 hover:border-amber-200"
+                            }`}
+                          >
+                            <div className="min-w-0 text-left">
                               {m.subtitle && (
-                                <p className="text-[10px] text-stone-400 leading-none mb-0.5 truncate">
+                                <p className="text-[10px] text-stone-400 leading-none mb-1 truncate">
                                   {m.subtitle}
                                 </p>
                               )}
-                              <p className="font-mono font-bold text-gray-800 tracking-wider text-base">
+                              <p className="font-mono font-bold text-gray-800 tracking-wider text-lg">
                                 {m.value}
                               </p>
                             </div>
-                            <button
-                              onClick={() => copyText(m.value!)}
-                              className="ml-3 p-1.5 rounded-lg hover:bg-stone-100 transition-colors text-stone-400 hover:text-amber-500 flex-shrink-0"
-                            >
+                            <div className={`flex items-center gap-1.5 ml-3 px-3 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 transition-colors ${
+                              copied === m.value
+                                ? "bg-green-100 text-green-600"
+                                : "bg-amber-100 text-amber-700"
+                            }`}>
                               {copied === m.value
-                                ? <Check className="h-4 w-4 text-green-500" />
-                                : <Copy className="h-4 w-4" />}
-                            </button>
-                          </div>
+                                ? <><Check className="h-3.5 w-3.5" /> Copiado</>
+                                : <><Copy className="h-3.5 w-3.5" /> Copiar</>}
+                            </div>
+                          </button>
                         </div>
                       ) : (
                         <div className="flex items-center justify-between">
@@ -499,6 +507,12 @@ export function CartSheet() {
               </svg>
               Enviar comprobante a Masterpiece
             </a>
+
+            {/* Aviso número confirmación */}
+            <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700 text-center leading-relaxed">
+              📲 Una vez confirmemos tu pago, te llegará un mensaje de WhatsApp con la confirmación.
+              Puede venir de un número diferente al de siempre — ¡somos nosotros! 😊
+            </div>
 
             {orderId && (
               <a

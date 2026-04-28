@@ -45,13 +45,17 @@ async function sendCustomerUpdate(
   const trackingUrl = `${baseUrl()}/pedido/${order.id}`;
   const sizeText    = order.size ? `\n📏 Talla: *${order.size}*` : "";
 
-  const isTienda = order.deliveryType === "recoger_tienda";
+  const isTienda    = order.deliveryType === "tienda";
+  const isDomicilio = order.deliveryType === "domicilio";
+  const storeUrl    = baseUrl();
   let body: string;
 
   if (newStatus === "PAGADO") {
     const nextStep = isTienda
-      ? `🏪 Tu pedido estará disponible para recoger en nuestra tienda en Cartagena.`
-      : `En breve te contactamos con los detalles de entrega.`;
+      ? `🏪 Estamos preparando tu pedido para que lo recojas en nuestra tienda en Cartagena. Te avisamos cuando esté listo.`
+      : isDomicilio
+        ? `🛵 Pronto te contactamos para coordinar la entrega a domicilio.`
+        : `📦 En breve te enviamos los detalles del envío.`;
 
     body =
       `Hola ${order.customerName} 👋\n\n` +
@@ -60,34 +64,51 @@ async function sendCustomerUpdate(
       `👕 *${order.productName}*${sizeText}\n` +
       `💰 ${order.price}\n\n` +
       `${nextStep}\n\n` +
-      (!isTienda ? `🔗 Sigue el estado:\n${trackingUrl}\n\n` : "") +
+      `🔗 Sigue el estado de tu pedido:\n${trackingUrl}\n\n` +
       `— Masterpiece CTG 🇨🇴`;
 
   } else if (isTienda) {
     // ENVIADO para tienda = listo para recoger
     body =
       `Hola ${order.customerName} 👋\n\n` +
-      `🏪 *¡Tu pedido está listo para recoger!*\n\n` +
+      `🏪 *¡Ya puedes venir a recogerlo, está listo!*\n\n` +
       `👕 *${order.productName}*${sizeText}\n` +
       `💰 ${order.price}\n\n` +
-      `📍 Pásate por la tienda en Cartagena.\n` +
-      `Si necesitas la dirección exacta, escríbenos.\n\n` +
+      `Te esperamos en la tienda en Cartagena 😊\n` +
+      `Si necesitas la dirección, escríbenos.\n\n` +
+      `¡Gracias por tu compra! 🙌 Seguimos con más ropa para ti:\n` +
+      `👉 ${storeUrl}\n\n` +
+      `— Masterpiece CTG 🇨🇴`;
+
+  } else if (isDomicilio) {
+    body =
+      `Hola ${order.customerName} 👋\n\n` +
+      `🛵 *¡Tu pedido está en camino!*\n\n` +
+      `👕 *${order.productName}*${sizeText}\n` +
+      `💰 ${order.price}\n\n` +
+      `El domicilio ya va en ruta hacia ti 🏠\n\n` +
+      `🔗 Sigue el estado aquí:\n${trackingUrl}\n\n` +
+      `¡Gracias por tu compra! 🙌 Seguimos con más ropa para ti:\n` +
+      `👉 ${storeUrl}\n\n` +
       `— Masterpiece CTG 🇨🇴`;
 
   } else {
+    // Envío nacional
     const carrierName =
       order.carrier === "interrapidisimo" ? "Interrapidísimo" :
       order.carrier === "envia"           ? "Envía"           : null;
-    const shippingLine =
-      order.deliveryType === "envio_nacional" && carrierName
-        ? `\n📦 Va por *${carrierName}*${order.city ? ` a ${order.city}` : ""}`
-        : `\n🛵 Domicilio en camino`;
+    const shippingLine = carrierName
+      ? `📦 Va por *${carrierName}*${order.city ? ` con destino a ${order.city}` : ""}`
+      : `📦 Pedido despachado`;
 
     body =
       `Hola ${order.customerName} 👋\n\n` +
-      `📦 *¡Tu pedido está en camino!*\n\n` +
-      `👕 *${order.productName}*${sizeText}${shippingLine}\n\n` +
+      `📦 *¡Tu pedido fue despachado!*\n\n` +
+      `👕 *${order.productName}*${sizeText}\n` +
+      `${shippingLine}\n\n` +
       `🔗 Sigue el estado aquí:\n${trackingUrl}\n\n` +
+      `¡Gracias por tu compra! 🙌 Seguimos con más ropa para ti:\n` +
+      `👉 ${storeUrl}\n\n` +
       `— Masterpiece CTG 🇨🇴`;
   }
 
