@@ -46,6 +46,17 @@ export default async function ProductPage({
       category: true,
       images:   { orderBy: { order: "asc" } },
       sizes:    { orderBy: { size:  "asc" } },
+      combos: {
+        include: {
+          related: {
+            include: {
+              images:   { orderBy: { order: "asc" } },
+              category: true,
+              sizes:    { orderBy: { size: "asc" } },
+            },
+          },
+        },
+      },
     },
   });
 
@@ -80,6 +91,15 @@ export default async function ProductPage({
     updatedAt: p.updatedAt.toISOString(),
   }));
 
+  const combosSerialized = product.combos
+    .filter((c) => c.related.isVisible)
+    .map((c) => ({
+      ...c.related,
+      price:     Number(c.related.price),
+      createdAt: c.related.createdAt.toISOString(),
+      updatedAt: c.related.updatedAt.toISOString(),
+    }));
+
   return (
     <div className="min-h-screen bg-[#F7F4EF]">
       {/* Header */}
@@ -100,9 +120,24 @@ export default async function ProductPage({
       <main className="max-w-4xl mx-auto px-4 py-6">
         <ProductClient product={serialized} />
 
+        {/* Completa el look */}
+        {combosSerialized.length > 0 && (
+          <section className="mt-10">
+            <h2 className="text-base font-bold text-gray-700 mb-1 tracking-tight">
+              ✨ Completa el look
+            </h2>
+            <p className="text-xs text-stone-400 mb-4">Productos que combinan perfecto con este</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              {combosSerialized.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Related products */}
         {relatedSerialized.length > 0 && (
-          <section className="mt-14">
+          <section className="mt-10">
             <h2 className="text-base font-bold text-gray-700 mb-4 tracking-tight">
               También te puede gustar
             </h2>

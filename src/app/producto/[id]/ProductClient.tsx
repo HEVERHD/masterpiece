@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   ChevronLeft, ChevronRight, X, ZoomIn,
-  ShoppingCart, Package, Bell, MessageCircle,
+  ShoppingCart, Package, Bell, MessageCircle, Share2,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
@@ -386,16 +386,33 @@ export function ProductClient({ product }: { product: Product }) {
               <span>💵 Efectivo</span>
             </div>
 
-            {/* Share / WhatsApp */}
-            <a
-              href={`https://wa.me/${process.env.NEXT_PUBLIC_ADMIN_WHATSAPP ?? "573150014381"}?text=${encodeURIComponent(`Hola, vi este producto en su catálogo y quiero más info: ${product.name}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 text-[#25D366] border border-[#25D366]/30 hover:bg-[#25D366]/5 rounded-xl py-2.5 text-sm font-medium transition-colors"
-            >
-              <MessageCircle className="h-4 w-4" />
-              Preguntar por WhatsApp
-            </a>
+            {/* Actions row */}
+            <div className="grid grid-cols-2 gap-2">
+              <a
+                href={`https://wa.me/${process.env.NEXT_PUBLIC_ADMIN_WHATSAPP ?? "573150014381"}?text=${encodeURIComponent(`Hola, vi este producto en su catálogo y quiero más info: ${product.name}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 text-[#25D366] border border-[#25D366]/30 hover:bg-[#25D366]/5 rounded-xl py-2.5 text-sm font-medium transition-colors"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Preguntar
+              </a>
+              <button
+                onClick={() => {
+                  const url  = window.location.href;
+                  const text = `¡Mira esto en Masterpiece CTG! 🔥\n\n👕 ${product.name}\n💰 ${formatPrice(product.price)}\n\n👉 ${url}`;
+                  if (navigator.share) {
+                    navigator.share({ title: product.name, text, url });
+                  } else {
+                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+                  }
+                }}
+                className="flex items-center justify-center gap-2 text-stone-500 border border-stone-200 hover:bg-stone-50 rounded-xl py-2.5 text-sm font-medium transition-colors"
+              >
+                <Share2 className="h-4 w-4" />
+                Compartir
+              </button>
+            </div>
           </div>
         </div>
       </div>

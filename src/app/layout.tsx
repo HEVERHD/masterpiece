@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import { CartProvider } from "@/context/CartContext";
 import { CartSheet } from "@/components/catalog/CartSheet";
+import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -41,6 +42,7 @@ export default function RootLayout({
         <CartProvider>
           {children}
           <CartSheet />
+          <PWAInstallBanner />
         </CartProvider>
         <Toaster richColors position="top-right" />
       </body>

@@ -29,9 +29,21 @@ model Product {
   lowStockAt  Int           @default(3)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+  combos      ProductCombo[] @relation("Combos")
+  comboOf     ProductCombo[] @relation("CombosOf")
 
   @@index([categoryId])
   @@index([isVisible])
+}
+
+model ProductCombo {
+  productId String
+  relatedId String
+  product   Product @relation("Combos",   fields: [productId], references: [id], onDelete: Cascade)
+  related   Product @relation("CombosOf", fields: [relatedId], references: [id], onDelete: Cascade)
+
+  @@id([productId, relatedId])
+  @@index([productId])
 }
 
 model Image {

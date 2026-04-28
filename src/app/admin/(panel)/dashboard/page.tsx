@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import {
   Package, AlertTriangle, EyeOff, CheckCircle,
   Plus, ShoppingBag, TrendingUp, Clock, XCircle, Truck,
+  Users, Repeat2, Bike, Store,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
@@ -70,10 +71,45 @@ async function getStats() {
     .map(([name, count]) => ({ name, count }));
   const maxTop = Math.max(...topProducts.map((p) => p.count), 1);
 
+  // ── Revenue this month vs last month ────────────────────────
+  const startOfMonth     = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const thisMonthRevenue = orders
+    .filter((o) => o.status !== "CANCELADO" && new Date(o.createdAt) >= startOfMonth)
+    .reduce((sum, o) => sum + parsePrice(o.price), 0);
+  const lastMonthRevenue = orders
+    .filter((o) => o.status !== "CANCELADO" && new Date(o.createdAt) >= startOfLastMonth && new Date(o.createdAt) < startOfMonth)
+    .reduce((sum, o) => sum + parsePrice(o.price), 0);
+
+  // ── Delivery breakdown ───────────────────────────────────────
+  const activeOrders = orders.filter((o) => o.status !== "CANCELADO");
+  const deliveryCount = {
+    tienda:         activeOrders.filter((o) => o.deliveryType === "tienda").length,
+    domicilio:      activeOrders.filter((o) => o.deliveryType === "domicilio").length,
+    envio_nacional: activeOrders.filter((o) => o.deliveryType === "envio_nacional").length,
+  };
+
+  // ── Recurring customers ──────────────────────────────────────
+  const phoneMap: Record<string, number> = {};
+  activeOrders.forEach((o) => { phoneMap[o.customerPhone] = (phoneMap[o.customerPhone] || 0) + 1; });
+  const totalCustomers     = Object.keys(phoneMap).length;
+  const recurringCustomers = Object.values(phoneMap).filter((c) => c >= 2).length;
+
+  // ── Peak hour ────────────────────────────────────────────────
+  const hourMap: Record<number, number> = {};
+  orders.forEach((o) => {
+    const h = new Date(o.createdAt).getHours();
+    hourMap[h] = (hourMap[h] || 0) + 1;
+  });
+  const peakEntry = Object.entries(hourMap).sort((a, b) => Number(b[1]) - Number(a[1]))[0];
+  const peakHour  = peakEntry ? `${peakEntry[0]}:00 – ${parseInt(peakEntry[0]) + 1}:00` : null;
+
   return {
     totalProducts, visible, hidden, withLowStock, lowStockProducts, products,
     pendiente, pagado, enviado, cancelado, revenue, last7, maxDay,
     topProducts, maxTop, totalOrders: orders.length,
+    thisMonthRevenue, lastMonthRevenue, deliveryCount,
+    totalCustomers, recurringCustomers, peakHour,
   };
 }
 
@@ -159,6 +195,92 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* ── Insights row ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Clientes recurrentes */}
+          <Card>
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-purple-50">
+                <Repeat2 className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Clientes recurrentes</p>
+                <p className="text-2xl font-bold">{stats.recurringCustomers}</p>
+                <p className="text-xs text-muted-foreground">
+                  de {stats.totalCustomers} clientes únicos
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Hora pico */}
+          <Card>
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-blue-50">
+                <Clock className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Hora pico de pedidos</p>
+                <p className="text-xl font-bold">{stats.peakHour ?? "—"}</p>
+                <p className="text-xs text-muted-foreground">más pedidos en este horario</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Este mes vs el anterior */}
+          <Card>
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-green-50">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Este mes</p>
+                <p className="text-xl font-bold text-green-600">{formatPrice(stats.thisMonthRevenue)}</p>
+                <p className="text-xs text-muted-foreground">
+                  mes anterior: {formatPrice(stats.lastMonthRevenue)}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ── Delivery breakdown ── */}
+        {stats.totalOrders > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Truck className="h-4 w-4" />
+                Tipos de entrega
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                {[
+                  { key: "tienda",         label: "Tienda",    icon: Store, color: "text-amber-600",  bg: "bg-amber-50"  },
+                  { key: "domicilio",      label: "Domicilio", icon: Bike,  color: "text-blue-600",   bg: "bg-blue-50"   },
+                  { key: "envio_nacional", label: "Nacional",  icon: Truck, color: "text-purple-600", bg: "bg-purple-50" },
+                ].map(({ key, label, icon: Icon, color, bg }) => {
+                  const count = stats.deliveryCount[key as keyof typeof stats.deliveryCount];
+                  const pct   = stats.totalOrders > 0 ? Math.round((count / stats.totalOrders) * 100) : 0;
+                  return (
+                    <div key={key} className="space-y-2">
+                      <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center mx-auto`}>
+                        <Icon className={`h-5 w-5 ${color}`} />
+                      </div>
+                      <p className="text-2xl font-bold">{count}</p>
+                      <p className="text-xs text-muted-foreground">{label}</p>
+                      <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${color.replace("text-", "bg-")}`} style={{ width: `${pct}%` }} />
+                      </div>
+                      <p className="text-xs font-medium">{pct}%</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Top productos */}
         {stats.topProducts.length > 0 && (
