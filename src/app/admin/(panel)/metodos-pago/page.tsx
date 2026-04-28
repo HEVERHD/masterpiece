@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Plus, Trash2, GripVertical, Eye, EyeOff,
-  ChevronUp, ChevronDown, Pencil, Check, X,
+  ChevronUp, ChevronDown, Pencil, Check, X, Smartphone,
 } from "lucide-react";
 
 interface PaymentMethod {
@@ -14,11 +14,12 @@ interface PaymentMethod {
   title:    string;
   subtitle: string | null;
   value:    string | null;
+  appLink:  string | null;
   order:    number;
   active:   boolean;
 }
 
-const EMPTY_FORM = { title: "", subtitle: "", value: "" };
+const EMPTY_FORM = { title: "", subtitle: "", value: "", appLink: "" };
 
 export default function MetodosPagoPage() {
   const [methods,  setMethods]  = useState<PaymentMethod[]>([]);
@@ -30,8 +31,6 @@ export default function MetodosPagoPage() {
 
   const fetchMethods = useCallback(async () => {
     try {
-      // Use the admin-authenticated session; GET returns only active,
-      // so we call the same route (it shows all active — fine for admin).
       const res  = await fetch("/api/metodos-pago");
       const data = await res.json();
       setMethods(data);
@@ -94,13 +93,10 @@ export default function MetodosPagoPage() {
     const swap = index + dir;
     if (swap < 0 || swap >= next.length) return;
     [next[index], next[swap]] = [next[swap], next[index]];
-    // Update order values
     const updated = next.map((m, i) => ({ ...m, order: i }));
     setMethods(updated);
     try {
-      await Promise.all(
-        updated.map((m) => patch(m.id, { order: m.order }))
-      );
+      await Promise.all(updated.map((m) => patch(m.id, { order: m.order })));
     } catch {
       toast.error("Error al reordenar");
       fetchMethods();
@@ -120,6 +116,7 @@ export default function MetodosPagoPage() {
                 title:    editData.title,
                 subtitle: editData.subtitle || null,
                 value:    editData.value    || null,
+                appLink:  editData.appLink  || null,
               }
             : m
         )
@@ -199,6 +196,23 @@ export default function MetodosPagoPage() {
                   className="w-full h-9 rounded-md border border-input px-3 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
+              <div className="col-span-2">
+                <label className="text-xs text-muted-foreground mb-1 block">
+                  Abrir app <span className="text-stone-400">(opcional — deep link, ej: </span>
+                  <code className="text-stone-500 text-[11px]">bancolombia://</code>
+                  <span className="text-stone-400">, </span>
+                  <code className="text-stone-500 text-[11px]">nequi://</code>
+                  <span className="text-stone-400">, </span>
+                  <code className="text-stone-500 text-[11px]">daviplata://</code>
+                  <span className="text-stone-400">)</span>
+                </label>
+                <input
+                  placeholder="bancolombia://"
+                  value={form.appLink}
+                  onChange={(e) => setForm({ ...form, appLink: e.target.value })}
+                  className="w-full h-9 rounded-md border border-input px-3 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </div>
             </div>
             <Button
               type="submit"
@@ -248,6 +262,12 @@ export default function MetodosPagoPage() {
                         placeholder="Valor a copiar"
                       />
                     </div>
+                    <input
+                      value={editData.appLink}
+                      onChange={(e) => setEditData({ ...editData, appLink: e.target.value })}
+                      className="w-full h-9 rounded-md border border-input px-3 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      placeholder="bancolombia://"
+                    />
                     <div className="flex gap-2">
                       <Button
                         size="sm"
@@ -295,6 +315,12 @@ export default function MetodosPagoPage() {
                       {m.value && (
                         <p className="text-xs font-mono text-amber-600 mt-0.5">{m.value}</p>
                       )}
+                      {m.appLink && (
+                        <p className="text-[10px] text-stone-400 mt-0.5 flex items-center gap-1">
+                          <Smartphone className="h-2.5 w-2.5" />
+                          {m.appLink}
+                        </p>
+                      )}
                     </div>
 
                     {/* Actions */}
@@ -315,6 +341,7 @@ export default function MetodosPagoPage() {
                             title:    m.title,
                             subtitle: m.subtitle ?? "",
                             value:    m.value    ?? "",
+                            appLink:  m.appLink  ?? "",
                           });
                         }}
                         className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-amber-500 transition-colors"

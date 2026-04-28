@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import {
   X, ArrowLeft, Trash2, ShoppingCart, CheckCircle2,
-  Loader2, Bike, Store, MapPin, PackageIcon, Copy, Check,
+  Loader2, Bike, Store, MapPin, PackageIcon, Copy, Check, Smartphone,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/utils";
@@ -12,6 +12,15 @@ import { toast } from "sonner";
 
 type View = "cart" | "delivery" | "form" | "success";
 type DeliveryType = "domicilio" | "envio_nacional" | "tienda" | null;
+
+function getMethodLogo(title: string): string | null {
+  const t = title.toLowerCase();
+  if (t.includes("bre-b") || t.includes("breb") || t.includes("bre b")) return "/brelogo.png";
+  if (t.includes("bancolombia")) return "/bancolombia.webp";
+  if (t.includes("nequi"))       return "/Nequi.webp";
+  if (t.includes("daviplata"))   return "/daviplatalogo.png";
+  return null;
+}
 
 const STORE_ADDRESS = "Campestre mz 82 lote 3 etapa 8, Cartagena, Colombia";
 const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
@@ -33,7 +42,7 @@ export function CartSheet() {
   const [error, setError]               = useState<string | null>(null);
   const [orderId,  setOrderId]          = useState<string | null>(null);
   const [copied,   setCopied]           = useState<string | null>(null);
-  const [methods,  setMethods]          = useState<{ id: string; title: string; subtitle: string | null; value: string | null }[]>([]);
+  const [methods,  setMethods]          = useState<{ id: string; title: string; subtitle: string | null; value: string | null; appLink: string | null }[]>([]);
   const [loadingMethods, setLoadingMethods] = useState(false);
 
   function copyText(text: string) {
@@ -401,11 +410,30 @@ export function CartSheet() {
                 </p>
               ) : (
                 <div className="space-y-0 divide-y divide-stone-100">
-                  {methods.map((m) => (
+                  {methods.map((m) => {
+                    const logo = getMethodLogo(m.title);
+                    return (
                     <div key={m.id} className="py-2.5">
                       {m.value ? (
                         <div className="space-y-1.5">
-                          <p className="font-semibold text-gray-700">{m.title}</p>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {logo && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={logo} alt="" aria-hidden className="h-6 w-auto max-w-[52px] object-contain" />
+                              )}
+                              <p className="font-semibold text-gray-700 text-sm">{m.title}</p>
+                            </div>
+                            {m.appLink && (
+                              <a
+                                href={m.appLink}
+                                className="flex items-center gap-1 text-[11px] font-medium text-amber-600 hover:text-amber-700 transition-colors flex-shrink-0"
+                              >
+                                <Smartphone className="h-3 w-3" />
+                                Abrir app
+                              </a>
+                            )}
+                          </div>
                           <div className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-stone-200">
                             <div className="min-w-0">
                               {m.subtitle && (
@@ -428,25 +456,39 @@ export function CartSheet() {
                           </div>
                         </div>
                       ) : (
-                        <div>
-                          <p className="font-semibold text-gray-700">{m.title}</p>
-                          {m.subtitle && (
-                            <p className="text-xs text-stone-400">{m.subtitle}</p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {logo && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={logo} alt="" aria-hidden className="h-6 w-auto max-w-[52px] object-contain" />
+                            )}
+                            <div>
+                              <p className="font-semibold text-gray-700 text-sm">{m.title}</p>
+                              {m.subtitle && (
+                                <p className="text-xs text-stone-400">{m.subtitle}</p>
+                              )}
+                            </div>
+                          </div>
+                          {m.appLink && (
+                            <a
+                              href={m.appLink}
+                              className="flex items-center gap-1 text-[11px] font-medium text-amber-600 hover:text-amber-700 transition-colors"
+                            >
+                              <Smartphone className="h-3 w-3" />
+                              Abrir app
+                            </a>
                           )}
                         </div>
                       )}
                     </div>
-                  ))}
+                  ); })}
                 </div>
               )}
             </div>
 
             {/* Comprobante CTA */}
             <a
-              href={`https://wa.me/${ADMIN_WA}?text=${encodeURIComponent(
-                `Hola Masterpiece! 👋 Adjunto mi comprobante de pago.\n` +
-                (orderId ? `Pedido ID: ${orderId}` : "")
-              )}`}
+              href={`https://wa.me/${ADMIN_WA}?text=${waText}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 w-full bg-[#25D366] hover:bg-[#1ebe5d] text-white font-semibold py-3 rounded-xl transition-colors text-sm"

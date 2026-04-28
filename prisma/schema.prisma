@@ -97,6 +97,7 @@ model PaymentMethod {
   title    String  // e.g. "🏦 Bancolombia"
   subtitle String? // e.g. "Cuenta Ahorro · Darío Marín"
   value    String? // copyable data, e.g. "91289105137"
+  appLink  String? // deep link to open the app, e.g. "bancolombia://"
   order    Int     @default(0)
   active   Boolean @default(true)
 }

@@ -42,6 +42,39 @@ const categorias = [
 async function main() {
   console.log("Iniciando seed...\n");
 
+  // ── Métodos de pago ──────────────────────────────────────────
+  const existingMethods = await prisma.paymentMethod.count();
+  if (existingMethods === 0) {
+    await prisma.paymentMethod.createMany({
+      data: [
+        {
+          title:    "🏦 Bancolombia",
+          subtitle: "Cuenta Ahorro · Darío Marín",
+          value:    "91289105137",
+          appLink:  "bancolombia://",
+          order:    0,
+        },
+        {
+          title:    "🔗 Bre-B Bancolombia",
+          subtitle: "Llave · @rubenm3453",
+          value:    "@rubenm3453",
+          appLink:  "bancolombia://",
+          order:    1,
+        },
+        {
+          title:    "💜 Daviplata",
+          subtitle: null,
+          value:    "3244224868",
+          appLink:  "daviplata://",
+          order:    2,
+        },
+      ],
+    });
+    console.log("✔ Métodos de pago creados\n");
+  } else {
+    console.log(`⏭  Métodos de pago ya existen (${existingMethods}), sin cambios\n`);
+  }
+
   for (const cat of categorias) {
     const categoria = await prisma.category.upsert({
       where: { slug: cat.slug },
