@@ -92,6 +92,15 @@ model PushSubscription {
   createdAt DateTime @default(now())
 }
 
+model PaymentMethod {
+  id       String  @id @default(cuid())
+  title    String  // e.g. "🏦 Bancolombia"
+  subtitle String? // e.g. "Cuenta Ahorro · Darío Marín"
+  value    String? // copyable data, e.g. "91289105137"
+  order    Int     @default(0)
+  active   Boolean @default(true)
+}
+
 model StockAlert {
   id          String   @id @default(cuid())
   productId   String

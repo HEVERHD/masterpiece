@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   ChevronLeft, ChevronRight, X, ZoomIn,
@@ -28,6 +29,7 @@ interface Product {
 
 export function ProductClient({ product }: { product: Product }) {
   const { addItem, openCart } = useCart();
+  const router = useRouter();
 
   // Gallery
   const [imgIndex, setImgIndex] = useState(0);
@@ -307,7 +309,7 @@ export function ProductClient({ product }: { product: Product }) {
                       Ver carrito y pagar
                     </button>
                     <button
-                      onClick={() => setAdded(false)}
+                      onClick={() => router.push("/")}
                       className="w-full border border-stone-200 text-stone-600 font-medium py-2.5 rounded-xl hover:bg-stone-50 transition-colors text-sm"
                     >
                       Seguir comprando

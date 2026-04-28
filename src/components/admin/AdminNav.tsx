@@ -12,6 +12,7 @@ import {
   X,
   ShoppingBag,
   Eye,
+  CreditCard,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -20,10 +21,11 @@ import Image from "next/image";
 import PushSubscribeButton from "./PushSubscribeButton";
 
 const navItems = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/pedidos", label: "Pedidos", icon: ShoppingBag },
-  { href: "/admin/productos", label: "Productos", icon: Package },
-  { href: "/admin/categorias", label: "Categorias", icon: Tag },
+  { href: "/admin/dashboard",     label: "Dashboard",      icon: LayoutDashboard },
+  { href: "/admin/pedidos",       label: "Pedidos",        icon: ShoppingBag     },
+  { href: "/admin/productos",     label: "Productos",      icon: Package         },
+  { href: "/admin/categorias",    label: "Categorías",     icon: Tag             },
+  { href: "/admin/metodos-pago",  label: "Métodos de pago", icon: CreditCard     },
 ];
 
 export function AdminNav() {

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import {
   X, ArrowLeft, Trash2, ShoppingCart, CheckCircle2,
-  Loader2, Bike, Store, MapPin, PackageIcon, CreditCard,
+  Loader2, Bike, Store, MapPin, PackageIcon, Copy, Check,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/utils";
@@ -31,9 +31,28 @@ export function CartSheet() {
   const [message, setMessage]           = useState("");
   const [loading, setLoading]           = useState(false);
   const [error, setError]               = useState<string | null>(null);
-  const [orderId, setOrderId]           = useState<string | null>(null);
-  const [pagoSent,  setPagoSent]        = useState(false);
-  const [pagoLoading, setPagoLoading]   = useState(false);
+  const [orderId,  setOrderId]          = useState<string | null>(null);
+  const [copied,   setCopied]           = useState<string | null>(null);
+  const [methods,  setMethods]          = useState<{ id: string; title: string; subtitle: string | null; value: string | null }[]>([]);
+  const [loadingMethods, setLoadingMethods] = useState(false);
+
+  function copyText(text: string) {
+    navigator.clipboard.writeText(text);
+    setCopied(text);
+    setTimeout(() => setCopied(null), 1800);
+  }
+
+  // Fetch payment methods when success view is shown
+  useEffect(() => {
+    if (view === "success" && methods.length === 0) {
+      setLoadingMethods(true);
+      fetch("/api/metodos-pago")
+        .then((r) => r.json())
+        .then(setMethods)
+        .catch(() => {})
+        .finally(() => setLoadingMethods(false));
+    }
+  }, [view, methods.length]);
 
   // Reset view when sheet closes
   useEffect(() => {
@@ -356,61 +375,104 @@ export function CartSheet() {
 
         {/* ── VIEW: SUCCESS ── */}
         {view === "success" && (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-4">
-            <CheckCircle2 className="h-16 w-16 text-green-500" />
-            <div>
-              <h3 className="text-xl font-bold mb-1">¡Pedido recibido!</h3>
-              <p className="text-muted-foreground text-sm">
-                Solicita los métodos de pago y te los enviamos directo a tu WhatsApp.
+          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
+            {/* Header */}
+            <div className="text-center">
+              <CheckCircle2 className="h-14 w-14 text-green-500 mx-auto mb-2" />
+              <h3 className="text-xl font-bold">¡Pedido recibido!</h3>
+              <p className="text-muted-foreground text-sm mt-1">
+                Realiza el pago para confirmar tu pedido.
               </p>
             </div>
 
-            {!pagoSent ? (
-              <button
-                disabled={pagoLoading}
-                onClick={async () => {
-                  setPagoLoading(true);
-                  try {
-                    const res = await fetch("/api/medios-pago", {
-                      method:  "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body:    JSON.stringify({ phone: customerPhone, customerName }),
-                    });
-                    if (!res.ok) {
-                      const data = await res.json().catch(() => ({}));
-                      throw new Error(data.error ?? "Error al enviar");
-                    }
-                    setPagoSent(true);
-                  } catch (err) {
-                    toast.error(err instanceof Error ? err.message : "No se pudo enviar");
-                  } finally {
-                    setPagoLoading(false);
-                  }
-                }}
-                className="flex items-center justify-center gap-2 w-full bg-[#1a1209] hover:bg-black disabled:opacity-50 text-amber-400 font-semibold py-3 rounded-xl transition-colors text-sm"
-              >
-                {pagoLoading
-                  ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
-                  : <><CreditCard className="h-4 w-4" /> Solicitar medio de pago</>
-                }
-              </button>
-            ) : (
-              <div className="w-full bg-green-50 border border-green-200 rounded-xl p-4 space-y-1">
-                <p className="font-semibold text-green-700 text-sm">¡Revisa tu WhatsApp!</p>
-                <p className="text-xs text-green-600">
-                  Te enviamos todos los métodos de pago al <span className="font-semibold">{customerPhone}</span>.
+            {/* Payment methods */}
+            <div className="bg-stone-50 rounded-2xl p-4 space-y-3 text-sm">
+              <p className="font-bold text-gray-800 text-center">💳 Métodos de pago</p>
+
+              {loadingMethods ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-8 bg-stone-200 rounded-lg animate-pulse" />
+                  ))}
+                </div>
+              ) : methods.length === 0 ? (
+                <p className="text-center text-stone-400 text-xs py-2">
+                  Sin métodos configurados aún.
                 </p>
-              </div>
-            )}
+              ) : (
+                <div className="space-y-0 divide-y divide-stone-100">
+                  {methods.map((m) => (
+                    <div key={m.id} className="py-2.5">
+                      {m.value ? (
+                        <div className="space-y-1.5">
+                          <p className="font-semibold text-gray-700">{m.title}</p>
+                          <div className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-stone-200">
+                            <div className="min-w-0">
+                              {m.subtitle && (
+                                <p className="text-[10px] text-stone-400 leading-none mb-0.5 truncate">
+                                  {m.subtitle}
+                                </p>
+                              )}
+                              <p className="font-mono font-bold text-gray-800 tracking-wider text-base">
+                                {m.value}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => copyText(m.value!)}
+                              className="ml-3 p-1.5 rounded-lg hover:bg-stone-100 transition-colors text-stone-400 hover:text-amber-500 flex-shrink-0"
+                            >
+                              {copied === m.value
+                                ? <Check className="h-4 w-4 text-green-500" />
+                                : <Copy className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="font-semibold text-gray-700">{m.title}</p>
+                          {m.subtitle && (
+                            <p className="text-xs text-stone-400">{m.subtitle}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Comprobante CTA */}
+            <a
+              href={`https://wa.me/${ADMIN_WA}?text=${encodeURIComponent(
+                `Hola Masterpiece! 👋 Adjunto mi comprobante de pago.\n` +
+                (orderId ? `Pedido ID: ${orderId}` : "")
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full bg-[#25D366] hover:bg-[#1ebe5d] text-white font-semibold py-3 rounded-xl transition-colors text-sm"
+            >
+              <svg className="w-4 h-4 fill-white flex-shrink-0" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.859L.057 23.75a.5.5 0 0 0 .614.612l5.975-1.56A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.946 9.946 0 0 1-5.127-1.416l-.367-.217-3.793.993 1.01-3.688-.239-.381A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+              </svg>
+              Enviar comprobante a Masterpiece
+            </a>
 
             {orderId && (
-              <a href={`/pedido/${orderId}`} target="_blank" rel="noopener noreferrer"
-                className="text-xs text-amber-600 hover:underline">
+              <a
+                href={`/pedido/${orderId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-amber-600 hover:underline text-center"
+              >
                 🔗 Ver estado de tu pedido
               </a>
             )}
 
-            <button onClick={closeCart} className="text-sm text-stone-400 hover:text-stone-600 transition-colors">
+            <button
+              onClick={closeCart}
+              className="text-sm text-stone-400 hover:text-stone-600 transition-colors text-center"
+            >
               Seguir viendo el catálogo →
             </button>
           </div>
