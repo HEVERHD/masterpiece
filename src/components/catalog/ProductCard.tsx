@@ -116,7 +116,7 @@ export function ProductCard({ product }: { product: Product }) {
                 e.stopPropagation();
                 setModalOpen(true);
               }}
-              className="absolute inset-x-0 bottom-0 py-2.5 bg-black/65 backdrop-blur-sm text-white text-[10px] font-bold tracking-[0.15em] flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
+              className="absolute inset-x-0 bottom-0 py-2.5 bg-black/65 backdrop-blur-sm text-white text-[10px] font-bold tracking-[0.15em] hidden sm:flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
             >
               <Eye className="h-3.5 w-3.5" />
               VISTA RÁPIDA
