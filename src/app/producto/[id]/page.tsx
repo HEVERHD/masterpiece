@@ -1,14 +1,16 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { CartButton } from "@/components/catalog/CartButton";
 import { ProductClient } from "./ProductClient";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import { SiteFooter } from "@/components/catalog/SiteFooter";
 import { ChevronLeft } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+const BASE_URL = "https://masterpiecectg.com";
 
 export async function generateMetadata({
   params,
@@ -18,17 +20,38 @@ export async function generateMetadata({
   const { id } = await params;
   const product = await prisma.product.findUnique({
     where: { id },
-    include: { images: { orderBy: { order: "asc" }, take: 1 } },
+    include: {
+      category: true,
+      images: { orderBy: { order: "asc" }, take: 1 },
+    },
   });
-  if (!product) return { title: "Producto no encontrado — Masterpiece CTG" };
+  if (!product) return { title: "Producto no encontrado" };
+
+  const price    = Number(product.price).toLocaleString("es-CO");
+  const imageUrl = product.images[0]?.url;
+  const desc     = product.description
+    ?? `Compra ${product.name} en Masterpiece CTG, Cartagena de Indias. Precio: $${price} COP. Pide por WhatsApp con domicilio.`;
+
   return {
-    title: `${product.name} — Masterpiece CTG`,
-    description:
-      product.description ??
-      `Compra ${product.name} en Masterpiece CTG, Cartagena de Indias.`,
+    title: product.name,
+    description: desc,
+    alternates: { canonical: `${BASE_URL}/producto/${id}` },
     openGraph: {
-      title: product.name,
-      images: product.images[0]?.url ? [product.images[0].url] : [],
+      type: "website",
+      title: `${product.name} | Masterpiece CTG`,
+      description: desc,
+      url: `${BASE_URL}/producto/${id}`,
+      siteName: "Masterpiece CTG",
+      locale: "es_CO",
+      images: imageUrl
+        ? [{ url: imageUrl, alt: product.name, width: 800, height: 1067 }]
+        : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${product.name} | Masterpiece CTG`,
+      description: desc,
+      images: imageUrl ? [imageUrl] : [],
     },
   };
 }
@@ -100,8 +123,36 @@ export default async function ProductPage({
       updatedAt: c.related.updatedAt.toISOString(),
     }));
 
+  const totalStock = product.sizes.reduce((sum, s) => sum + s.stock, 0);
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description:
+      product.description ??
+      `${product.name} disponible en Masterpiece CTG, Cartagena de Indias.`,
+    image: product.images.map((i) => i.url),
+    brand: { "@type": "Brand", name: "Masterpiece CTG" },
+    offers: {
+      "@type": "Offer",
+      url: `${BASE_URL}/producto/${product.id}`,
+      priceCurrency: "COP",
+      price: Number(product.price).toFixed(0),
+      availability:
+        totalStock > 0
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+      seller: { "@type": "Organization", name: "Masterpiece CTG" },
+    },
+    category: product.category.name,
+  };
+
   return (
     <div className="min-h-screen bg-[#F7F4EF]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       {/* Header */}
       <header className="bg-brand-darker border-b border-gold-800/30 sticky top-0 z-40 shadow-lg">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -150,19 +201,7 @@ export default async function ProductPage({
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-brand-darker border-t border-gold-800/30 mt-16 py-8">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <Image
-            src="/logo.png"
-            alt="Masterpiece CTG"
-            width={160}
-            height={44}
-            className="h-9 w-auto object-contain mx-auto mb-2 opacity-80"
-          />
-          <p className="text-gold-500 text-xs">Cartagena de Indias, Colombia 🇨🇴</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

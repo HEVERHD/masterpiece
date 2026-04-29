@@ -11,17 +11,18 @@ interface Props {
 }
 
 const SIZES = [
-  { label: "Pequeño",  value: 400,  desc: "Tarjeta de presentación" },
-  { label: "Mediano",  value: 800,  desc: "Volante / flyer"         },
-  { label: "Grande",   value: 1200, desc: "Cartel / pendón"         },
+  { label: "Pequeño",  value: 400,  desc: "Tarjeta / sticker"   },
+  { label: "Mediano",  value: 800,  desc: "Volante / flyer"      },
+  { label: "Grande",   value: 1200, desc: "Cartel / pendón"      },
 ];
 
+const LOGO_PATH = "/logo.png";
+
 export function QRPageClient({ storeUrl }: Props) {
-  const canvasRef  = useRef<HTMLCanvasElement>(null);
-  const printRef   = useRef<HTMLDivElement>(null);
-  const [size, setSize]       = useState(800);
-  const [copied, setCopied]   = useState(false);
-  const [ready, setReady]     = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [size, setSize]     = useState(800);
+  const [copied, setCopied] = useState(false);
+  const [ready, setReady]   = useState(false);
 
   useEffect(() => {
     generateQR();
@@ -29,15 +30,44 @@ export function QRPageClient({ storeUrl }: Props) {
   }, [size]);
 
   async function generateQR() {
-    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     setReady(false);
-    await QRCode.toCanvas(canvasRef.current, storeUrl, {
-      width:  size,
+
+    // 1. Draw QR to canvas
+    await QRCode.toCanvas(canvas, storeUrl, {
+      width: size,
       margin: 3,
       color: { dark: "#0E0B04", light: "#FFFFFF" },
       errorCorrectionLevel: "H",
     });
-    setReady(true);
+
+    // 2. Overlay logo in center
+    const ctx = canvas.getContext("2d")!;
+    const logo = new window.Image();
+    logo.src = LOGO_PATH;
+    logo.onload = () => {
+      // Maintain aspect ratio — fit logo inside a max box
+      const maxW   = Math.floor(size * 0.26);
+      const ratio  = logo.naturalWidth / logo.naturalHeight;
+      const drawW  = maxW;
+      const drawH  = Math.floor(maxW / ratio);
+
+      const x = Math.floor((size - drawW) / 2);
+      const y = Math.floor((size - drawH) / 2);
+
+      // White rounded background behind logo
+      const padX = Math.floor(drawW * 0.10);
+      const padY = Math.floor(drawH * 0.18);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.roundRect(x - padX, y - padY, drawW + padX * 2, drawH + padY * 2, 14);
+      ctx.fill();
+
+      ctx.drawImage(logo, x, y, drawW, drawH);
+      setReady(true);
+    };
+    logo.onerror = () => setReady(true); // still usable without logo
   }
 
   function download() {
@@ -71,50 +101,30 @@ export function QRPageClient({ storeUrl }: Props) {
               background: #fff;
               font-family: Arial, sans-serif;
               padding: 40px;
+              gap: 0;
             }
-            .brand {
-              font-size: 28px;
-              font-weight: 900;
-              letter-spacing: 6px;
-              color: #C4973A;
-              margin-bottom: 4px;
-              text-transform: uppercase;
+            img.logo {
+              width: 200px;
+              height: auto;
+              margin-bottom: 16px;
             }
-            .sub {
-              font-size: 13px;
-              letter-spacing: 4px;
-              color: #a87c3a;
-              margin-bottom: 24px;
-              text-transform: uppercase;
-            }
-            img {
-              width: 320px;
-              height: 320px;
+            img.qr {
+              width: 300px;
+              height: 300px;
               border: 3px solid #C4973A;
-              border-radius: 12px;
-              padding: 8px;
+              border-radius: 16px;
+              padding: 10px;
             }
-            .url {
-              margin-top: 20px;
-              font-size: 15px;
-              color: #555;
-              letter-spacing: 1px;
-            }
-            .cta {
-              margin-top: 10px;
-              font-size: 13px;
-              color: #aaa;
-            }
+            .url  { margin-top: 18px; font-size: 14px; color: #666; letter-spacing: 1px; }
+            .cta  { margin-top:  6px; font-size: 12px; color: #aaa; }
             @media print {
-              body { padding: 20px; }
-              img  { width: 260px; height: 260px; }
+              img.qr { width: 260px; height: 260px; }
             }
           </style>
         </head>
         <body>
-          <p class="brand">Masterpiece</p>
-          <p class="sub">Cartagena</p>
-          <img src="${dataUrl}" alt="QR Code" />
+          <img class="logo" src="${window.location.origin}/logo.png" alt="Masterpiece CTG" />
+          <img class="qr"   src="${dataUrl}" alt="QR Code" />
           <p class="url">${storeUrl}</p>
           <p class="cta">Escanea para ver el catálogo</p>
           <script>window.onload = () => { window.print(); window.close(); }<\/script>
@@ -132,7 +142,7 @@ export function QRPageClient({ storeUrl }: Props) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-3xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <QrCode className="h-6 w-6 text-amber-500" />
@@ -143,59 +153,49 @@ export function QRPageClient({ storeUrl }: Props) {
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* QR preview */}
-        <div className="flex flex-col items-center gap-4">
-          <div className="bg-white rounded-2xl p-5 shadow-md border border-stone-200 flex flex-col items-center gap-3">
-            {/* Brand header */}
-            <div className="text-center">
-              <p className="font-black tracking-[0.2em] text-[#C4973A] text-lg uppercase">
-                Masterpiece
-              </p>
-              <p className="text-[#a87c3a] tracking-[0.15em] text-[10px] uppercase">
-                Cartagena
-              </p>
-            </div>
+      <div className="grid md:grid-cols-[auto_1fr] gap-8 items-start">
+        {/* QR card */}
+        <div className="flex flex-col items-center gap-3 bg-white rounded-2xl shadow-md border border-stone-200 p-6 w-fit mx-auto">
+          {/* Logo */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt="Masterpiece CTG"
+            className="h-12 w-auto object-contain"
+          />
 
-            {/* Canvas QR */}
-            <div className="relative">
-              <canvas
-                ref={canvasRef}
-                className="rounded-xl border-2 border-[#C4973A]/40"
-                style={{ width: 220, height: 220 }}
-              />
-              {!ready && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl">
-                  <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                </div>
-              )}
-            </div>
-
-            {/* URL */}
-            <button
-              onClick={copyUrl}
-              className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-amber-600 transition-colors"
-            >
-              {copied ? (
-                <Check className="h-3.5 w-3.5 text-green-500" />
-              ) : (
-                <Copy className="h-3.5 w-3.5" />
-              )}
-              {storeUrl}
-            </button>
-            <p className="text-[11px] text-stone-400">
-              Escanea para ver el catálogo
-            </p>
+          {/* QR canvas */}
+          <div className="relative">
+            <canvas
+              ref={canvasRef}
+              className="rounded-xl border-2 border-[#C4973A]/30"
+              style={{ width: 240, height: 240 }}
+            />
+            {!ready && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl">
+                <div className="w-7 h-7 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
           </div>
+
+          {/* URL */}
+          <button
+            onClick={copyUrl}
+            className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-amber-600 transition-colors"
+          >
+            {copied
+              ? <Check className="h-3.5 w-3.5 text-green-500" />
+              : <Copy  className="h-3.5 w-3.5" />
+            }
+            {storeUrl}
+          </button>
+          <p className="text-[11px] text-stone-400">Escanea para ver el catálogo</p>
         </div>
 
         {/* Controls */}
         <div className="space-y-5">
-          {/* Size selector */}
           <div>
-            <p className="text-sm font-semibold text-gray-700 mb-2">
-              Tamaño de descarga
-            </p>
+            <p className="text-sm font-semibold text-gray-700 mb-2">Tamaño de descarga</p>
             <div className="space-y-2">
               {SIZES.map((s) => (
                 <button
@@ -208,20 +208,15 @@ export function QRPageClient({ storeUrl }: Props) {
                   }`}
                 >
                   <div>
-                    <p className="text-sm font-semibold text-gray-800">
-                      {s.label}
-                    </p>
+                    <p className="text-sm font-semibold text-gray-800">{s.label}</p>
                     <p className="text-xs text-gray-400">{s.desc}</p>
                   </div>
-                  <span className="text-xs text-gray-400 font-mono">
-                    {s.value}px
-                  </span>
+                  <span className="text-xs text-gray-400 font-mono">{s.value}px</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Actions */}
           <div className="space-y-2">
             <Button
               onClick={download}
@@ -251,7 +246,6 @@ export function QRPageClient({ storeUrl }: Props) {
           </div>
         </div>
       </div>
-      <div ref={printRef} />
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MessageCircle, Package, ChevronLeft, ChevronRight, Heart, Eye } from "lucide-react";
+import { MessageCircle, Package, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { ProductModal } from "./ProductModal";
 import { useWishlist } from "@/context/WishlistContext";
@@ -106,21 +106,6 @@ export function ProductCard({ product }: { product: Product }) {
             <div className="absolute inset-0 flex items-center justify-center">
               <Package className="h-12 w-12 text-stone-200" />
             </div>
-          )}
-
-          {/* Quick view overlay — desktop hover */}
-          {totalStock > 0 && (
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setModalOpen(true);
-              }}
-              className="absolute inset-x-0 bottom-0 py-2.5 bg-black/65 backdrop-blur-sm text-white text-[10px] font-bold tracking-[0.15em] hidden sm:flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
-            >
-              <Eye className="h-3.5 w-3.5" />
-              VISTA RÁPIDA
-            </button>
           )}
 
           {/* Wishlist heart */}

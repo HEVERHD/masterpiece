@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { CatalogFilters } from "@/components/catalog/CatalogFilters";
 import { SearchableGrid } from "@/components/catalog/SearchableGrid";
 import { CartButton } from "@/components/catalog/CartButton";
+import { SiteFooter } from "@/components/catalog/SiteFooter";
 import { SearchProvider } from "@/context/SearchContext";
 import Image from "next/image";
 import Link from "next/link";
@@ -137,19 +138,7 @@ export default async function CatalogPage({
           <SearchableGrid products={serialized} hasServerFilters={hasServerFilters} />
         </main>
 
-        {/* Footer */}
-        <footer className="bg-brand-darker border-t border-gold-800/30 mt-16 py-10">
-          <div className="max-w-7xl mx-auto px-4 text-center">
-            <Image
-              src="/logo.png"
-              alt="Masterpiece CTG"
-              width={180}
-              height={50}
-              className="h-10 w-auto object-contain mx-auto mb-3 opacity-80"
-            />
-            <p className="text-gold-500 text-sm">Cartagena de Indias, Colombia 🇨🇴</p>
-          </div>
-        </footer>
+        <SiteFooter />
       </div>
     </SearchProvider>
   );

@@ -12,26 +12,26 @@ model Category {
   id        String    @id @default(cuid())
   name      String    @unique
   slug      String    @unique
-  products  Product[]
   createdAt DateTime  @default(now())
+  products  Product[]
 }
 
 model Product {
-  id          String        @id @default(cuid())
+  id          String         @id @default(cuid())
   name        String
   description String?
-  price       Decimal       @db.Decimal(10, 2)
+  price       Decimal        @db.Decimal(10, 2)
   categoryId  String
-  category    Category      @relation(fields: [categoryId], references: [id])
-  images      Image[]
-  sizes       ProductSize[]
+  isVisible   Boolean        @default(true)
+  lowStockAt  Int            @default(3)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   color       String?
-  isVisible   Boolean       @default(true)
-  lowStockAt  Int           @default(3)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  images      Image[]
+  category    Category       @relation(fields: [categoryId], references: [id])
   combos      ProductCombo[] @relation("Combos")
   comboOf     ProductCombo[] @relation("CombosOf")
+  sizes       ProductSize[]
 
   @@index([categoryId])
   @@index([isVisible])
@@ -40,7 +40,7 @@ model Product {
 model ProductCombo {
   productId String
   relatedId String
-  product   Product @relation("Combos",   fields: [productId], references: [id], onDelete: Cascade)
+  product   Product @relation("Combos", fields: [productId], references: [id], onDelete: Cascade)
   related   Product @relation("CombosOf", fields: [relatedId], references: [id], onDelete: Cascade)
 
   @@id([productId, relatedId])
@@ -51,8 +51,8 @@ model Image {
   id        String  @id @default(cuid())
   url       String
   productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   order     Int     @default(0)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
 }
@@ -68,13 +68,6 @@ model ProductSize {
   @@index([productId])
 }
 
-enum OrderStatus {
-  PENDIENTE
-  PAGADO
-  ENVIADO
-  CANCELADO
-}
-
 model Order {
   id            String      @id @default(cuid())
   productId     String?
@@ -88,11 +81,11 @@ model Order {
   city          String?
   carrier       String?
   message       String?
-  items         Json?
-  adminNote     String?
   status        OrderStatus @default(PENDIENTE)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  items         Json?
+  adminNote     String?
 
   @@index([status])
 }
@@ -107,12 +100,12 @@ model PushSubscription {
 
 model PaymentMethod {
   id       String  @id @default(cuid())
-  title    String  // e.g. "🏦 Bancolombia"
-  subtitle String? // e.g. "Cuenta Ahorro · Darío Marín"
-  value    String? // copyable data, e.g. "91289105137"
-  appLink  String? // deep link to open the app, e.g. "bancolombia://"
+  title    String
+  subtitle String?
+  value    String?
   order    Int     @default(0)
   active   Boolean @default(true)
+  appLink  String?
 }
 
 model StockAlert {
@@ -125,4 +118,11 @@ model StockAlert {
   createdAt   DateTime @default(now())
 
   @@index([productId])
+}
+
+enum OrderStatus {
+  PENDIENTE
+  PAGADO
+  ENVIADO
+  CANCELADO
 }
