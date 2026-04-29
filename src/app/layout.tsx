@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import { CartProvider } from "@/context/CartContext";
+import { WishlistProvider } from "@/context/WishlistContext";
 import { CartSheet } from "@/components/catalog/CartSheet";
 import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 
@@ -39,11 +40,13 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ServiceWorkerRegister />
-        <CartProvider>
-          {children}
-          <CartSheet />
-          <PWAInstallBanner />
-        </CartProvider>
+        <WishlistProvider>
+          <CartProvider>
+            {children}
+            <CartSheet />
+            <PWAInstallBanner />
+          </CartProvider>
+        </WishlistProvider>
         <Toaster richColors position="top-right" />
       </body>
     </html>

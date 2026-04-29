@@ -19,6 +19,7 @@ export interface CatalogProduct {
   category: { name: string };
   images: { url: string }[];
   sizes: ProductSize[];
+  lowStockAt?: number;
 }
 
 interface Props {
@@ -72,8 +73,14 @@ export function SearchableGrid({ products, hasServerFilters }: Props) {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-          {filtered.map((product) => (
-            <ProductCard key={product.id} product={product} />
+          {filtered.map((product, index) => (
+            <div
+              key={product.id}
+              className="animate-[fadeInUp_0.5s_ease_both]"
+              style={{ animationDelay: `${Math.min(index * 55, 500)}ms` }}
+            >
+              <ProductCard product={product} />
+            </div>
           ))}
         </div>
       )}

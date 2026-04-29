@@ -14,12 +14,14 @@ async function getProducts(
   category: string,
   size: string,
   price: string,
-  sort: string
+  sort: string,
+  color: string
 ) {
   const where: Prisma.ProductWhereInput = {
     isVisible: true,
     ...(category ? { category: { slug: category } } : {}),
     ...(size ? { sizes: { some: { size, stock: { gt: 0 } } } } : {}),
+    ...(color ? { color } : {}),
     ...(price === "lt50000"
       ? { price: { lt: 50000 } }
       : price === "50-100"
@@ -68,6 +70,7 @@ export default async function CatalogPage({
     size?: string;
     price?: string;
     sort?: string;
+    color?: string;
   }>;
 }) {
   const {
@@ -76,14 +79,20 @@ export default async function CatalogPage({
     size     = "",
     price    = "",
     sort     = "",
+    color    = "",
   } = await searchParams;
 
   const [products, categories] = await Promise.all([
-    getProducts(category, size, price, sort),
+    getProducts(category, size, price, sort, color),
     getCategories(),
   ]);
 
-  const hasServerFilters = !!(category || size || price || sort);
+  const hasServerFilters = !!(category || size || price || sort || color);
+
+  // Collect colors that actually exist in the current product set
+  const availableColors = [...new Set(
+    products.map((p) => p.color).filter((c): c is string => !!c)
+  )];
 
   const serialized = products.map((p) => ({
     ...p,
@@ -118,7 +127,7 @@ export default async function CatalogPage({
             </div>
 
             <Suspense fallback={<div className="h-[88px] bg-gold-900/20 rounded-2xl animate-pulse" />}>
-              <CatalogFilters categories={categories} />
+              <CatalogFilters categories={categories} availableColors={availableColors} />
             </Suspense>
           </div>
         </header>

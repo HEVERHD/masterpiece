@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Loader2, Save, Eye, EyeOff } from "lucide-react";
+import { Loader2, Save, Eye, EyeOff, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,12 +22,14 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SizeManager } from "./SizeManager";
 import { ImageUploader } from "./ImageUploader";
+import { PRODUCT_COLORS } from "@/lib/colors";
 
 const formSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
   description: z.string().optional(),
   price: z.coerce.number().positive("El precio debe ser mayor a 0"),
   categoryId: z.string().min(1, "Selecciona una categoria"),
+  color: z.string().optional(),
   isVisible: z.boolean(),
 });
 
@@ -46,6 +48,7 @@ interface ProductFormProps {
     description: string | null;
     price: number;
     categoryId: string;
+    color: string | null;
     isVisible: boolean;
     sizes: { size: string; stock: number }[];
     images: { url: string }[];
@@ -76,11 +79,13 @@ export function ProductForm({ categories, product }: ProductFormProps) {
       description: product?.description ?? "",
       price: product?.price ?? 0,
       categoryId: product?.categoryId ?? "",
+      color: product?.color ?? "",
       isVisible: product?.isVisible ?? true,
     },
   });
 
   const isVisible = watch("isVisible");
+  const selectedColor = watch("color");
 
   async function onSubmit(values: FormValues) {
     const payload = { ...values, sizes, images };
@@ -180,6 +185,51 @@ export function ProductForm({ categories, product }: ProductFormProps) {
                   )}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Color */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Palette className="h-4 w-4" />
+                Color del articulo
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setValue("color", "")}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                    !selectedColor
+                      ? "bg-gray-800 text-white border-gray-800"
+                      : "border-gray-300 text-gray-500 hover:border-gray-500"
+                  }`}
+                >
+                  Sin color
+                </button>
+                {PRODUCT_COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => setValue("color", c.value)}
+                    title={c.label}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                      selectedColor === c.value
+                        ? "border-amber-500 bg-amber-50"
+                        : "border-gray-200 hover:border-gray-400"
+                    }`}
+                  >
+                    <span
+                      className="w-3.5 h-3.5 rounded-full border border-gray-300 flex-shrink-0"
+                      style={{ backgroundColor: c.hex }}
+                    />
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+              <input type="hidden" {...register("color")} />
             </CardContent>
           </Card>
 

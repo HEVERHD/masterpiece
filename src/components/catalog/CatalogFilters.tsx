@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 import { Search, X, ArrowUpDown } from "lucide-react";
 import { useSearch } from "@/context/SearchContext";
+import { PRODUCT_COLORS } from "@/lib/colors";
 
 interface Category {
   id: string;
@@ -13,6 +14,7 @@ interface Category {
 
 interface CatalogFiltersProps {
   categories: Category[];
+  availableColors?: string[];
 }
 
 const PRICE_OPTIONS = [
@@ -28,7 +30,7 @@ const SORT_OPTIONS = [
   { label: "Más pedidos",   value: "popular"    },
 ];
 
-export function CatalogFilters({ categories }: CatalogFiltersProps) {
+export function CatalogFilters({ categories, availableColors = [] }: CatalogFiltersProps) {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const { search, setSearch } = useSearch();
@@ -37,6 +39,7 @@ export function CatalogFilters({ categories }: CatalogFiltersProps) {
   const size     = searchParams.get("size")     ?? "";
   const price    = searchParams.get("price")    ?? "";
   const sort     = searchParams.get("sort")     ?? "";
+  const color    = searchParams.get("color")    ?? "";
 
   const updateFilter = useCallback(
     (key: string, value: string) => {
@@ -56,7 +59,11 @@ export function CatalogFilters({ categories }: CatalogFiltersProps) {
     router.push("/");
   }
 
-  const hasFilters = search || category || size || price || sort;
+  const visibleColors = PRODUCT_COLORS.filter((c) =>
+    availableColors.includes(c.value)
+  );
+
+  const hasFilters = search || category || size || price || sort || color;
 
   return (
     <div className="space-y-2.5">
@@ -139,6 +146,29 @@ export function CatalogFilters({ categories }: CatalogFiltersProps) {
             }`}
           >
             {opt.label}
+          </button>
+        ))}
+
+        {/* Color dots */}
+        {visibleColors.length > 0 && (
+          <span className="flex-shrink-0 w-px bg-gold-800/30 self-stretch mx-1" />
+        )}
+        {visibleColors.map((c) => (
+          <button
+            key={c.value}
+            onClick={() => updateFilter("color", color === c.value ? "" : c.value)}
+            title={c.label}
+            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+              color === c.value
+                ? "border-white/80 bg-white/10"
+                : "border-gold-800/50 hover:border-white/40"
+            }`}
+          >
+            <span
+              className="w-3.5 h-3.5 rounded-full border border-white/20 flex-shrink-0"
+              style={{ backgroundColor: c.hex }}
+            />
+            <span className="text-gold-300 text-[11px]">{c.label}</span>
           </button>
         ))}
 

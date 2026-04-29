@@ -13,6 +13,7 @@ const productSchema = z.object({
   description: z.string().optional(),
   price: z.number().positive("El precio debe ser positivo"),
   categoryId: z.string().min(1, "La categoria es requerida"),
+  color: z.string().optional().nullable(),
   isVisible: z.boolean().default(true),
   sizes: z.array(sizeSchema).default([]),
   images: z.array(z.string().url()).default([]),
@@ -76,6 +77,7 @@ export async function POST(request: Request) {
         description: data.description,
         price: data.price,
         categoryId: data.categoryId,
+        color: data.color || null,
         isVisible: data.isVisible,
         sizes: {
           create: data.sizes.map((s) => ({ ...s, id: undefined })),

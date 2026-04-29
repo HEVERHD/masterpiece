@@ -8,6 +8,7 @@ const updateSchema = z.object({
   description: z.string().optional().nullable(),
   price: z.number().positive().optional(),
   categoryId: z.string().min(1).optional(),
+  color: z.string().optional().nullable(),
   isVisible: z.boolean().optional(),
   sizes: z
     .array(z.object({ size: z.string(), stock: z.number().int().min(0) }))
@@ -61,6 +62,7 @@ export async function PATCH(
     if (data.description !== undefined) updateData.description = data.description;
     if (data.price !== undefined) updateData.price = data.price;
     if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
+    if (data.color !== undefined) updateData.color = data.color || null;
     if (data.isVisible !== undefined) updateData.isVisible = data.isVisible;
 
     if (data.sizes !== undefined) {

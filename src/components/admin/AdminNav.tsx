@@ -13,6 +13,7 @@ import {
   ShoppingBag,
   Eye,
   CreditCard,
+  ImageDown,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -21,11 +22,12 @@ import Image from "next/image";
 import PushSubscribeButton from "./PushSubscribeButton";
 
 const navItems = [
-  { href: "/admin/dashboard",     label: "Dashboard",      icon: LayoutDashboard },
-  { href: "/admin/pedidos",       label: "Pedidos",        icon: ShoppingBag     },
-  { href: "/admin/productos",     label: "Productos",      icon: Package         },
-  { href: "/admin/categorias",    label: "Categorías",     icon: Tag             },
-  { href: "/admin/metodos-pago",  label: "Métodos de pago", icon: CreditCard     },
+  { href: "/admin/dashboard",     label: "Dashboard",       icon: LayoutDashboard },
+  { href: "/admin/pedidos",       label: "Pedidos",         icon: ShoppingBag     },
+  { href: "/admin/productos",     label: "Productos",       icon: Package         },
+  { href: "/admin/categorias",    label: "Categorías",      icon: Tag             },
+  { href: "/admin/metodos-pago",  label: "Métodos de pago", icon: CreditCard      },
+  { href: "/admin/exportar",      label: "Exportar catálogo", icon: ImageDown     },
 ];
 
 export function AdminNav() {

@@ -25,6 +25,7 @@ model Product {
   category    Category      @relation(fields: [categoryId], references: [id])
   images      Image[]
   sizes       ProductSize[]
+  color       String?
   isVisible   Boolean       @default(true)
   lowStockAt  Int           @default(3)
   createdAt   DateTime      @default(now())
