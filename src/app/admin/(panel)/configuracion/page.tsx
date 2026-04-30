@@ -86,7 +86,7 @@ export default function ConfiguracionPage() {
         <div className="space-y-3">
           <div>
             <label className="text-xs font-medium text-stone-500 block mb-1">
-              Etiqueta destacada <span className="text-stone-400">(ej: "Envío gratis")</span>
+              Etiqueta destacada <span className="text-stone-400">(ej: &ldquo;Envío gratis&rdquo;)</span>
             </label>
             <div className="flex items-center gap-2 border border-stone-200 rounded-xl px-3 py-2.5">
               <Tag className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
