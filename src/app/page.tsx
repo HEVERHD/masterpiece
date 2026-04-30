@@ -4,7 +4,7 @@ import { CatalogFilters } from "@/components/catalog/CatalogFilters";
 import { SearchableGrid } from "@/components/catalog/SearchableGrid";
 import { CartButton } from "@/components/catalog/CartButton";
 import { SiteFooter } from "@/components/catalog/SiteFooter";
-import { HeroCarousel } from "@/components/catalog/HeroCarousel";
+import { HeroCarouselSection } from "@/components/catalog/HeroCarouselSection";
 import { SearchProvider } from "@/context/SearchContext";
 import Image from "next/image";
 import Link from "next/link";
@@ -150,9 +150,9 @@ export default async function CatalogPage({
 
         {/* Main content */}
         <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-          {/* Hero carousel — solo cuando no hay filtros activos */}
-          {!hasServerFilters && !search && (
-            <HeroCarousel products={featured} />
+          {/* Hero carousel — se oculta automáticamente al buscar o filtrar */}
+          {!hasServerFilters && (
+            <HeroCarouselSection products={featured} />
           )}
           <SearchableGrid products={serialized} hasServerFilters={hasServerFilters} />
         </main>
