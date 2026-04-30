@@ -123,8 +123,10 @@ export async function POST(req: Request) {
           `💰 ${price}\n` +
           deliveryText +
           questionText +
-          `\n🔗 Sigue tu pedido aquí:\n${trackingUrl}\n` +
-          `\nEn breve te contactamos para coordinar el pago.\n` +
+          `\n📤 *Envía tu comprobante de pago a este número:*\n` +
+          `*+57 315 001 4381*\n\n` +
+          `🔗 Sigue tu pedido aquí:\n${trackingUrl}\n` +
+          `\nUna vez confirmemos el pago, te avisamos por aquí. ✅\n` +
           `— Masterpiece CTG, Cartagena 🇨🇴`;
         await twilioClient.messages.create({ from, to, body: clientBody });
       }
