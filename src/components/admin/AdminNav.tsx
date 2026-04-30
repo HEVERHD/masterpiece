@@ -15,6 +15,7 @@ import {
   CreditCard,
   ImageDown,
   QrCode,
+  Settings,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,7 @@ const navItems = [
   { href: "/admin/metodos-pago",  label: "Métodos de pago", icon: CreditCard      },
   { href: "/admin/exportar",      label: "Exportar catálogo", icon: ImageDown     },
   { href: "/admin/qr",            label: "Código QR",         icon: QrCode        },
+  { href: "/admin/configuracion", label: "Configuración",     icon: Settings      },
 ];
 
 export function AdminNav() {

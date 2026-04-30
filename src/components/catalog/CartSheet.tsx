@@ -45,6 +45,9 @@ export function CartSheet() {
   const [copied,   setCopied]           = useState<string | null>(null);
   const [methods,  setMethods]          = useState<{ id: string; title: string; subtitle: string | null; value: string | null; appLink: string | null }[]>([]);
   const [loadingMethods, setLoadingMethods] = useState(false);
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState<number>(150000);
+  const [freeShippingLabel, setFreeShippingLabel]         = useState<string>("Envío gratis");
+  const [prevAbove, setPrevAbove] = useState(false);
 
   function copyText(text: string) {
     navigator.clipboard.writeText(text);
@@ -67,6 +70,30 @@ export function CartSheet() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
+
+  // Fetch promo settings once
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.promo_threshold) setFreeShippingThreshold(Number(data.promo_threshold));
+        if (data.promo_label)     setFreeShippingLabel(data.promo_label);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Notificación cuando el carrito cruza el umbral de envío gratis
+  useEffect(() => {
+    const above = total >= freeShippingThreshold;
+    if (above && !prevAbove && items.length > 0) {
+      toast.success(`🎉 ¡${freeShippingLabel}! Tu pedido supera $${freeShippingThreshold.toLocaleString("es-CO")}`, {
+        duration: 4000,
+        style: { background: "#166534", color: "#fff", fontWeight: "600" },
+      });
+    }
+    setPrevAbove(above);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total, freeShippingThreshold]);
 
   // Fetch payment methods when success view is shown
   useEffect(() => {
@@ -238,6 +265,34 @@ export function CartSheet() {
                 </div>
 
                 <div className="border-t p-4 space-y-3 bg-white">
+                  {/* Barra de progreso envío gratis */}
+                  {total < freeShippingThreshold ? (
+                    <div className="bg-stone-50 rounded-xl px-3 py-2.5 space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-stone-500">
+                          Te faltan{" "}
+                          <span className="font-semibold text-stone-700">
+                            {formatPrice(freeShippingThreshold - total)}
+                          </span>{" "}
+                          para <span className="font-semibold text-green-600">{freeShippingLabel} 🛵</span>
+                        </span>
+                      </div>
+                      <div className="w-full bg-stone-200 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="h-full bg-green-500 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min((total / freeShippingThreshold) * 100, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-green-50 border border-green-200 rounded-xl px-3 py-2.5 flex items-center gap-2">
+                      <span className="text-lg">🎉</span>
+                      <p className="text-xs font-semibold text-green-700">
+                        ¡{freeShippingLabel} aplicado a tu pedido!
+                      </p>
+                    </div>
+                  )}
+
                   <div className="flex justify-between items-center">
                     <span className="text-stone-500 text-sm">Total estimado</span>
                     <span className="text-xl font-bold text-amber-600">{formatPrice(total)}</span>
