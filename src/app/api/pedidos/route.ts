@@ -70,7 +70,7 @@ async function sendCustomerUpdate(
           "3": sizeVar,
           "4": order.price,
           "5": nextStep,
-          "6": isTienda ? "" : `🔗 Sigue tu pedido: ${trackingVar}`,
+          "6": isTienda ? `Visita nuestra tienda en Cartagena: ${storeUrl}` : `🔗 Sigue tu pedido: ${trackingVar}`,
         }),
       });
       return;
