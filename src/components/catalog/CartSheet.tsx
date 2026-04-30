@@ -40,6 +40,7 @@ export function CartSheet() {
   const [message, setMessage]           = useState("");
   const [loading, setLoading]           = useState(false);
   const [error, setError]               = useState<string | null>(null);
+  const [dataSaved, setDataSaved]       = useState(false);
   const [orderId,  setOrderId]          = useState<string | null>(null);
   const [copied,   setCopied]           = useState<string | null>(null);
   const [methods,  setMethods]          = useState<{ id: string; title: string; subtitle: string | null; value: string | null; appLink: string | null }[]>([]);
@@ -50,6 +51,22 @@ export function CartSheet() {
     setCopied(text);
     setTimeout(() => setCopied(null), 1800);
   }
+
+  // Load saved customer data from localStorage when form view opens
+  useEffect(() => {
+    if (view === "form") {
+      try {
+        const saved = localStorage.getItem("masterpiece-customer");
+        if (saved) {
+          const { name, phone } = JSON.parse(saved);
+          if (name  && !customerName)  setCustomerName(name);
+          if (phone && !customerPhone) setCustomerPhone(phone);
+          setDataSaved(true);
+        }
+      } catch { /* ignore */ }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
 
   // Fetch payment methods when success view is shown
   useEffect(() => {
@@ -122,6 +139,13 @@ export function CartSheet() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al enviar");
       setOrderId(data.orderId ?? null);
+      // Guardar nombre y teléfono para la próxima vez
+      try {
+        localStorage.setItem(
+          "masterpiece-customer",
+          JSON.stringify({ name: customerName.trim(), phone: customerPhone.trim() })
+        );
+      } catch { /* ignore */ }
       clearCart();
       setView("success");
     } catch (err) {
@@ -304,6 +328,27 @@ export function CartSheet() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Badge datos recordados */}
+              {dataSaved && (
+                <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                  <p className="text-xs text-amber-700 font-medium">
+                    ✓ Datos recordados de tu última compra
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomerName("");
+                      setCustomerPhone("");
+                      setDataSaved(false);
+                      localStorage.removeItem("masterpiece-customer");
+                    }}
+                    className="text-[11px] text-amber-500 hover:text-amber-700 underline ml-2 flex-shrink-0"
+                  >
+                    Borrar
+                  </button>
+                </div>
+              )}
+
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Nombre *</label>
                 <input

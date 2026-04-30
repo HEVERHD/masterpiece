@@ -91,17 +91,14 @@ export async function POST(req: Request) {
       // Mensaje al cliente
       if (process.env.TWILIO_CONTENT_SID) {
         const isMulti = Array.isArray(items) && items.length > 1;
-        // Para multi-artículos: listamos cada item en {{2}} y dejamos {{3}} vacío
         const var2 = isMulti
           ? (items as Array<{ productName: string; size: string | null; price: string }>)
-              .map((it) => `${it.productName}${it.size ? ` (T.${it.size})` : ""} — ${it.price}`)
-              .join("\n")
+              .map((it) => `${it.productName}${it.size ? ` (T.${it.size})` : ""} - ${it.price}`)
+              .join(", ")
           : productName;
-        const var3 = isMulti ? " " : (size ?? "Única");
-        // {{5}} lleva el link de rastreo (+ pregunta del cliente si existe)
-        const var5 = message
-          ? `${trackingUrl}\n💬 "${message}"`
-          : trackingUrl;
+        const var3 = isMulti ? "-" : (size ?? "Unica");
+        // Twilio contentVariables no acepta saltos de línea — sólo texto plano
+        const var5 = trackingUrl;
 
         await twilioClient.messages.create({
           from,
