@@ -43,76 +43,128 @@ async function sendCustomerUpdate(
   const from        = `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`;
   const to          = `whatsapp:${normalizePhone(order.customerPhone)}`;
   const trackingUrl = `${baseUrl()}/pedido/${order.id}`;
-  const sizeText    = order.size ? `\n📏 Talla: *${order.size}*` : "";
+  const storeUrl    = baseUrl();
 
   const isTienda    = order.deliveryType === "tienda";
   const isDomicilio = order.deliveryType === "domicilio";
-  const storeUrl    = baseUrl();
-  let body: string;
+
+  const sizeVar     = order.size ? ` — Talla ${order.size}` : "";
 
   if (newStatus === "PAGADO") {
     const nextStep = isTienda
-      ? `🏪 Estamos preparando tu pedido para que lo recojas en nuestra tienda en Cartagena. Te avisamos cuando esté listo.`
+      ? "🏪 Estamos preparando tu pedido para que lo recojas en nuestra tienda en Cartagena. Te avisamos cuando este listo."
       : isDomicilio
-        ? `🛵 Pronto te contactamos para coordinar la entrega a domicilio.`
-        : `📦 En breve te enviamos los detalles del envío.`;
+        ? "🛵 Pronto te contactamos para coordinar la entrega a domicilio."
+        : "📦 En breve te enviamos los detalles del envio.";
+    const trackingVar = isTienda ? storeUrl : trackingUrl;
 
-    body =
-      `Hola ${order.customerName} 👋\n\n` +
-      `✅ *¡Pago confirmado!*\n\n` +
-      `Tu pedido en *Masterpiece CTG* está siendo preparado:\n` +
-      `👕 *${order.productName}*${sizeText}\n` +
-      `💰 ${order.price}\n\n` +
-      `${nextStep}\n\n` +
-      (!isTienda ? `🔗 Sigue el estado de tu pedido:\n${trackingUrl}\n\n` : "") +
-      `— Masterpiece CTG 🇨🇴`;
+    // Si hay plantilla aprobada, usarla (evita el bloqueo de 24h)
+    if (process.env.TWILIO_CONTENT_SID_PAGADO) {
+      await client.messages.create({
+        from,
+        to,
+        contentSid: process.env.TWILIO_CONTENT_SID_PAGADO,
+        contentVariables: JSON.stringify({
+          "1": order.customerName,
+          "2": order.productName,
+          "3": sizeVar,
+          "4": order.price,
+          "5": nextStep,
+          "6": isTienda ? "" : `🔗 Sigue tu pedido: ${trackingVar}`,
+        }),
+      });
+      return;
+    }
 
-  } else if (isTienda) {
-    // ENVIADO para tienda = listo para recoger
-    body =
-      `Hola ${order.customerName} 👋\n\n` +
-      `🏪 *¡Ya puedes venir a recogerlo, está listo!*\n\n` +
-      `👕 *${order.productName}*${sizeText}\n` +
-      `💰 ${order.price}\n\n` +
-      `Te esperamos en la tienda en Cartagena 😊\n` +
-      `Si necesitas la dirección, escríbenos.\n\n` +
-      `¡Gracias por tu compra! 🙌 Seguimos con más ropa para ti:\n` +
-      `👉 ${storeUrl}\n\n` +
-      `— Masterpiece CTG 🇨🇴`;
-
-  } else if (isDomicilio) {
-    body =
-      `Hola ${order.customerName} 👋\n\n` +
-      `🛵 *¡Tu pedido está en camino!*\n\n` +
-      `👕 *${order.productName}*${sizeText}\n` +
-      `💰 ${order.price}\n\n` +
-      `El domicilio ya va en ruta hacia ti 🏠\n\n` +
-      `🔗 Sigue el estado aquí:\n${trackingUrl}\n\n` +
-      `¡Gracias por tu compra! 🙌 Seguimos con más ropa para ti:\n` +
-      `👉 ${storeUrl}\n\n` +
-      `— Masterpiece CTG 🇨🇴`;
-
-  } else {
-    // Envío nacional
-    const carrierName =
-      order.carrier === "interrapidisimo" ? "Interrapidísimo" :
-      order.carrier === "envia"           ? "Envía"           : null;
-    const shippingLine = carrierName
-      ? `📦 Va por *${carrierName}*${order.city ? ` con destino a ${order.city}` : ""}`
-      : `📦 Pedido despachado`;
-
-    body =
-      `Hola ${order.customerName} 👋\n\n` +
-      `📦 *¡Tu pedido fue despachado!*\n\n` +
-      `👕 *${order.productName}*${sizeText}\n` +
-      `${shippingLine}\n\n` +
-      `🔗 Sigue el estado aquí:\n${trackingUrl}\n\n` +
-      `¡Gracias por tu compra! 🙌 Seguimos con más ropa para ti:\n` +
-      `👉 ${storeUrl}\n\n` +
-      `— Masterpiece CTG 🇨🇴`;
+    // Fallback: mensaje libre (solo funciona dentro de la ventana de 24h)
+    const sizeText = order.size ? `\n📏 Talla: *${order.size}*` : "";
+    await client.messages.create({
+      from,
+      to,
+      body:
+        `Hola ${order.customerName} 👋\n\n` +
+        `✅ *¡Pago confirmado!*\n\n` +
+        `Tu pedido en *Masterpiece CTG* está siendo preparado:\n` +
+        `👕 *${order.productName}*${sizeText}\n` +
+        `💰 ${order.price}\n\n` +
+        `${nextStep}\n\n` +
+        (!isTienda ? `🔗 Sigue el estado de tu pedido:\n${trackingVar}\n\n` : "") +
+        `— Masterpiece CTG 🇨🇴`,
+    });
+    return;
   }
 
-  await client.messages.create({ from, to, body });
+  // ENVIADO
+  const carrierName =
+    order.carrier === "interrapidisimo" ? "Interrapidísimo" :
+    order.carrier === "envia"           ? "Envía"           : null;
+
+  const shipVar = isTienda
+    ? "🏪 Te esperamos en la tienda en Cartagena. Si necesitas la direccion, escribenos."
+    : isDomicilio
+      ? "🛵 El domicilio ya va en ruta hacia ti."
+      : carrierName
+        ? `📦 Va por ${carrierName}${order.city ? ` con destino a ${order.city}` : ""}.`
+        : "📦 Pedido despachado.";
+
+  const statusTitle = isTienda
+    ? "🏪 ¡Ya puedes venir a recogerlo, esta listo!"
+    : isDomicilio
+      ? "🛵 ¡Tu pedido esta en camino!"
+      : "📦 ¡Tu pedido fue despachado!";
+
+  // Tienda: plantilla dedicada con solo 5 variables (sin tracking URL)
+  if (isTienda && process.env.TWILIO_CONTENT_SID_ENVIADO_TIENDA) {
+    await client.messages.create({
+      from,
+      to,
+      contentSid: process.env.TWILIO_CONTENT_SID_ENVIADO_TIENDA,
+      contentVariables: JSON.stringify({
+        "1": order.customerName,
+        "2": order.productName,
+        "3": sizeVar,
+        "4": order.price,
+        "5": storeUrl,
+      }),
+    });
+    return;
+  }
+
+  // Domicilio / envío nacional: plantilla con tracking URL
+  if (!isTienda && process.env.TWILIO_CONTENT_SID_ENVIADO) {
+    await client.messages.create({
+      from,
+      to,
+      contentSid: process.env.TWILIO_CONTENT_SID_ENVIADO,
+      contentVariables: JSON.stringify({
+        "1": order.customerName,
+        "2": order.productName,
+        "3": sizeVar,
+        "4": order.price,
+        "5": shipVar,
+        "6": trackingUrl,
+        "7": storeUrl,
+      }),
+    });
+    return;
+  }
+
+  // Fallback: mensaje libre
+  const sizeText = order.size ? `\n📏 Talla: *${order.size}*` : "";
+  await client.messages.create({
+    from,
+    to,
+    body:
+      `Hola ${order.customerName} 👋\n\n` +
+      `${statusTitle}\n\n` +
+      `👕 *${order.productName}*${sizeText}\n` +
+      `💰 ${order.price}\n\n` +
+      `${shipVar}\n\n` +
+      (!isTienda ? `🔗 Sigue el estado aquí:\n${trackingUrl}\n\n` : "") +
+      `¡Gracias por tu compra! 🙌 Seguimos con más ropa para ti:\n` +
+      `👉 ${storeUrl}\n\n` +
+      `— Masterpiece CTG 🇨🇴`,
+  });
 }
 
 async function sendLowStockAlert(productName: string, size: string, remaining: number) {

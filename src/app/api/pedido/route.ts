@@ -130,17 +130,56 @@ export async function POST(req: Request) {
 
       // Mensaje al admin
       if (process.env.ADMIN_WHATSAPP) {
-        const adminTo   = `whatsapp:${normalizePhone(process.env.ADMIN_WHATSAPP)}`;
-        const adminBody =
-          `🛒 *Nuevo pedido — Masterpiece CTG*\n\n` +
-          `👤 *${customerName}*\n` +
-          `📞 ${normalizePhone(customerPhone)}\n\n` +
-          itemsText +
-          `💰 ${price}\n` +
-          deliveryText +
-          questionText +
-          `\n📋 ${trackingUrl}`;
-        await twilioClient.messages.create({ from, to: adminTo, body: adminBody });
+        const adminTo = `whatsapp:${normalizePhone(process.env.ADMIN_WHATSAPP)}`;
+
+        if (process.env.TWILIO_CONTENT_SID_ADMIN) {
+          // Plantilla aprobada — funciona siempre (no depende de la ventana de 24h)
+          const isMulti = Array.isArray(items) && items.length > 1;
+          const adminVar3 = isMulti
+            ? (items as Array<{ productName: string; size: string | null; price: string }>)
+                .map((it) => `${it.productName}${it.size ? ` (T.${it.size})` : ""} - ${it.price}`)
+                .join(", ")
+            : `${productName}${size ? ` — Talla ${size}` : ""}`;
+
+          const adminVar5 =
+            deliveryType === "domicilio"
+              ? "Domicilio en Cartagena"
+              : deliveryType === "envio_nacional"
+              ? `Envio nacional via ${carrier === "interrapidisimo" ? "Interrapidisimo" : "Envia"}`
+              : "Recoge en tienda";
+
+          const adminVar6 =
+            deliveryType !== "tienda" && address
+              ? `${city ? `Ciudad: ${city} — ` : ""}${address}`
+              : address ?? "";
+
+          await twilioClient.messages.create({
+            from,
+            to: adminTo,
+            contentSid: process.env.TWILIO_CONTENT_SID_ADMIN,
+            contentVariables: JSON.stringify({
+              "1": customerName,
+              "2": normalizePhone(customerPhone),
+              "3": adminVar3,
+              "4": price,
+              "5": adminVar5,
+              "6": adminVar6,
+              "7": trackingUrl,
+            }),
+          });
+        } else {
+          // Fallback: mensaje libre (requiere opt-in en sandbox)
+          const adminBody =
+            `🛒 *Nuevo pedido — Masterpiece CTG*\n\n` +
+            `👤 *${customerName}*\n` +
+            `📞 ${normalizePhone(customerPhone)}\n\n` +
+            itemsText +
+            `💰 ${price}\n` +
+            deliveryText +
+            questionText +
+            `\n📋 ${trackingUrl}`;
+          await twilioClient.messages.create({ from, to: adminTo, body: adminBody });
+        }
       }
     } catch (twilioErr) {
       console.error("[TWILIO ERROR]", twilioErr);
