@@ -23,6 +23,8 @@ function baseUrl() {
   return process.env.NEXT_PUBLIC_URL ?? "https://masterpiece-brown.vercel.app";
 }
 
+const STORE_ADDRESS = "Campestre mz 82 lote 3 etapa 8, Cartagena, Colombia";
+
 async function sendCustomerUpdate(
   order: {
     id: string;
@@ -113,7 +115,7 @@ async function sendCustomerUpdate(
       ? "🛵 ¡Tu pedido esta en camino!"
       : "📦 ¡Tu pedido fue despachado!";
 
-  // Tienda: plantilla dedicada con solo 5 variables (sin tracking URL)
+  // Tienda: plantilla con dirección física + URL de la tienda
   if (isTienda && process.env.TWILIO_CONTENT_SID_ENVIADO_TIENDA) {
     await client.messages.create({
       from,
@@ -124,7 +126,8 @@ async function sendCustomerUpdate(
         "2": order.productName,
         "3": sizeVar,
         "4": order.price,
-        "5": storeUrl,
+        "5": STORE_ADDRESS,
+        "6": storeUrl,
       }),
     });
     return;
@@ -160,7 +163,7 @@ async function sendCustomerUpdate(
       `👕 *${order.productName}*${sizeText}\n` +
       `💰 ${order.price}\n\n` +
       `${shipVar}\n\n` +
-      (!isTienda ? `🔗 Sigue el estado aquí:\n${trackingUrl}\n\n` : "") +
+      (isTienda ? `📍 *${STORE_ADDRESS}*\n\n` : `🔗 Sigue el estado aquí:\n${trackingUrl}\n\n`) +
       `¡Gracias por tu compra! 🙌 Seguimos con más ropa para ti:\n` +
       `👉 ${storeUrl}\n\n` +
       `— Masterpiece CTG 🇨🇴`,
