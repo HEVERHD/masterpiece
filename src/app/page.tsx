@@ -5,6 +5,9 @@ import { SearchableGrid } from "@/components/catalog/SearchableGrid";
 import { CartButton } from "@/components/catalog/CartButton";
 import { SiteFooter } from "@/components/catalog/SiteFooter";
 import { HeroCarouselSection } from "@/components/catalog/HeroCarouselSection";
+import { TrustBar } from "@/components/catalog/TrustBar";
+import { CategoryCards } from "@/components/catalog/CategoryCards";
+import { PromoBanner } from "@/components/catalog/PromoBanner";
 import { SearchProvider } from "@/context/SearchContext";
 import Image from "next/image";
 import Link from "next/link";
@@ -59,10 +62,6 @@ async function getProducts(
   return prisma.product.findMany({ where, include, orderBy });
 }
 
-async function getCategories() {
-  return prisma.category.findMany({ orderBy: { name: "asc" } });
-}
-
 export default async function CatalogPage({
   searchParams,
 }: {
@@ -84,9 +83,9 @@ export default async function CatalogPage({
     color    = "",
   } = await searchParams;
 
-  const [products, categories, featuredRaw] = await Promise.all([
+  const [products, categories, featuredRaw, categoriesWithImages] = await Promise.all([
     getProducts(category, size, price, sort, color),
-    getCategories(),
+    prisma.category.findMany({ orderBy: { name: "asc" } }),
     prisma.product.findMany({
       where: { isVisible: true },
       include: {
@@ -96,6 +95,17 @@ export default async function CatalogPage({
       orderBy: { createdAt: "desc" },
       take: 6,
     }),
+    prisma.category.findMany({
+      orderBy: { name: "asc" },
+      include: {
+        products: {
+          where: { isVisible: true },
+          include: { images: { orderBy: { order: "asc" }, take: 1 } },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+      },
+    }),
   ]);
 
   const featured = featuredRaw.map((p) => ({
@@ -103,9 +113,16 @@ export default async function CatalogPage({
     price: Number(p.price),
   }));
 
+  const categoryCards = categoriesWithImages
+    .filter((c) => c.products.length > 0)
+    .map((c) => ({
+      name:     c.name,
+      slug:     c.slug,
+      imageUrl: c.products[0]?.images[0]?.url ?? null,
+    }));
+
   const hasServerFilters = !!(category || size || price || sort || color);
 
-  // Collect colors that actually exist in the current product set
   const availableColors = [...new Set(
     products.map((p) => p.color).filter((c): c is string => !!c)
   )];
@@ -149,11 +166,36 @@ export default async function CatalogPage({
         </header>
 
         {/* Main content */}
-        <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-          {/* Hero carousel — se oculta automáticamente al buscar o filtrar */}
+        <main className="max-w-7xl mx-auto px-4 py-6 space-y-5">
+
           {!hasServerFilters && (
-            <HeroCarouselSection products={featured} />
+            <>
+              {/* A — Carousel */}
+              <HeroCarouselSection products={featured} />
+
+              {/* A — Trust bar */}
+              <TrustBar />
+
+              {/* B — Categorías visuales */}
+              <CategoryCards categories={categoryCards} />
+
+              {/* D — Promo banner */}
+              <PromoBanner />
+            </>
           )}
+
+          {/* C — Encabezado de sección */}
+          <div className="flex items-baseline justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-stone-800 tracking-tight">
+                {hasServerFilters || search ? "Resultados" : "Nueva Colección"}
+              </h2>
+              <p className="text-xs text-stone-400 mt-0.5">
+                {serialized.length} producto{serialized.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+          </div>
+
           <SearchableGrid products={serialized} hasServerFilters={hasServerFilters} />
         </main>
 
