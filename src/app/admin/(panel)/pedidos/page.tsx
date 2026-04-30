@@ -397,7 +397,7 @@ export default function PedidosPage() {
                       disabled={updating === order.id}
                       onClick={() => updateStatus(order.id, "ENVIADO")}
                     >
-                      {order.deliveryType === "recoger_tienda" ? (
+                      {order.deliveryType === "tienda" ? (
                         <>
                           <CheckCircle2 className="h-4 w-4 mr-1" />
                           Listo para recoger

@@ -4,6 +4,7 @@ import { CatalogFilters } from "@/components/catalog/CatalogFilters";
 import { SearchableGrid } from "@/components/catalog/SearchableGrid";
 import { CartButton } from "@/components/catalog/CartButton";
 import { SiteFooter } from "@/components/catalog/SiteFooter";
+import { HeroCarousel } from "@/components/catalog/HeroCarousel";
 import { SearchProvider } from "@/context/SearchContext";
 import Image from "next/image";
 import Link from "next/link";
@@ -83,10 +84,24 @@ export default async function CatalogPage({
     color    = "",
   } = await searchParams;
 
-  const [products, categories] = await Promise.all([
+  const [products, categories, featuredRaw] = await Promise.all([
     getProducts(category, size, price, sort, color),
     getCategories(),
+    prisma.product.findMany({
+      where: { isVisible: true },
+      include: {
+        category: true,
+        images: { orderBy: { order: "asc" }, take: 1 },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+    }),
   ]);
+
+  const featured = featuredRaw.map((p) => ({
+    ...p,
+    price: Number(p.price),
+  }));
 
   const hasServerFilters = !!(category || size || price || sort || color);
 
@@ -134,7 +149,11 @@ export default async function CatalogPage({
         </header>
 
         {/* Main content */}
-        <main className="max-w-7xl mx-auto px-4 py-6">
+        <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+          {/* Hero carousel — solo cuando no hay filtros activos */}
+          {!hasServerFilters && !search && (
+            <HeroCarousel products={featured} />
+          )}
           <SearchableGrid products={serialized} hasServerFilters={hasServerFilters} />
         </main>
 

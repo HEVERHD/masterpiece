@@ -3,10 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { MessageCircle, Package, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
-import { ProductModal } from "./ProductModal";
+import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
+import { toast } from "sonner";
+
 
 interface ProductSize {
   size: string;
@@ -28,9 +31,10 @@ interface Product {
 const STOCK_BAR_MAX = 5;
 
 export function ProductCard({ product }: { product: Product }) {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [imgIndex, setImgIndex]   = useState(0);
-  const { isWishlisted, toggle }  = useWishlist();
+  const [imgIndex, setImgIndex]    = useState(0);
+  const { isWishlisted, toggle }   = useWishlist();
+  const { addItem, openCart }      = useCart();
+  const router                     = useRouter();
 
   const totalStock     = product.sizes.reduce((sum, s) => sum + s.stock, 0);
   const hasImages      = product.images.length > 0;
@@ -198,7 +202,34 @@ export function ProductCard({ product }: { product: Product }) {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setModalOpen(true);
+                if (availableSizes.length === 1) {
+                  // Una sola talla → agregar directo al carrito
+                  addItem({
+                    productId:      product.id,
+                    productName:    product.name,
+                    size:           availableSizes[0].size,
+                    price:          product.price,
+                    priceFormatted: formatPrice(product.price),
+                    imageUrl:       product.images[0]?.url ?? null,
+                  });
+                  toast.success("Añadido al carrito 🛒");
+                  openCart();
+                } else if (availableSizes.length === 0) {
+                  // Sin tallas definidas → agregar directo
+                  addItem({
+                    productId:      product.id,
+                    productName:    product.name,
+                    size:           null,
+                    price:          product.price,
+                    priceFormatted: formatPrice(product.price),
+                    imageUrl:       product.images[0]?.url ?? null,
+                  });
+                  toast.success("Añadido al carrito 🛒");
+                  openCart();
+                } else {
+                  // Múltiples tallas → ir a la página del producto
+                  router.push(`/producto/${product.id}`);
+                }
               }}
               disabled={totalStock === 0}
               className="flex items-center gap-1 bg-[#25D366] hover:bg-[#1ebe5d] disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-colors"
@@ -209,12 +240,6 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
       </Link>
-
-      <ProductModal
-        product={product}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-      />
     </>
   );
 }
