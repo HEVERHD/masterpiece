@@ -89,6 +89,12 @@ async function getStats() {
     envio_nacional: activeOrders.filter((o) => o.deliveryType === "envio_nacional").length,
   };
 
+  // ── Canal de ventas ──────────────────────────────────────────
+  const webOrders    = activeOrders.filter((o) => (o.source ?? "web") !== "tienda_fisica");
+  const storeOrders  = activeOrders.filter((o) => o.source === "tienda_fisica");
+  const webRevenue   = webOrders.reduce((sum, o) => sum + parsePrice(o.price), 0);
+  const storeRevenue = storeOrders.reduce((sum, o) => sum + parsePrice(o.price), 0);
+
   // ── Recurring customers ──────────────────────────────────────
   const phoneMap: Record<string, number> = {};
   activeOrders.forEach((o) => { phoneMap[o.customerPhone] = (phoneMap[o.customerPhone] || 0) + 1; });
@@ -110,6 +116,8 @@ async function getStats() {
     topProducts, maxTop, totalOrders: orders.length,
     thisMonthRevenue, lastMonthRevenue, deliveryCount,
     totalCustomers, recurringCustomers, peakHour,
+    webOrders: webOrders.length, storeOrders: storeOrders.length,
+    webRevenue, storeRevenue,
   };
 }
 
@@ -274,6 +282,65 @@ export default async function DashboardPage() {
                         <div className={`h-full rounded-full ${color.replace("text-", "bg-")}`} style={{ width: `${pct}%` }} />
                       </div>
                       <p className="text-xs font-medium">{pct}%</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── Canal de ventas ── */}
+        {(stats.webOrders > 0 || stats.storeOrders > 0) && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Store className="h-4 w-4" />
+                Canal de ventas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-6">
+                {[
+                  {
+                    key:     "web",
+                    label:   "Web",
+                    count:   stats.webOrders,
+                    revenue: stats.webRevenue,
+                    color:   "bg-blue-500",
+                    bg:      "bg-blue-50",
+                    text:    "text-blue-600",
+                    icon:    ShoppingBag,
+                  },
+                  {
+                    key:     "tienda",
+                    label:   "Tienda física",
+                    count:   stats.storeOrders,
+                    revenue: stats.storeRevenue,
+                    color:   "bg-amber-500",
+                    bg:      "bg-amber-50",
+                    text:    "text-amber-600",
+                    icon:    Store,
+                  },
+                ].map(({ key, label, count, revenue, color, bg, text, icon: Icon }) => {
+                  const total = stats.webOrders + stats.storeOrders;
+                  const pct   = total > 0 ? Math.round((count / total) * 100) : 0;
+                  return (
+                    <div key={key} className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center`}>
+                          <Icon className={`h-4 w-4 ${text}`} />
+                        </div>
+                        <span className="text-sm font-semibold">{label}</span>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">{count}</p>
+                        <p className="text-xs text-muted-foreground">pedidos ({pct}%)</p>
+                      </div>
+                      <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+                      </div>
+                      <p className={`text-sm font-semibold ${text}`}>{formatPrice(revenue)}</p>
                     </div>
                   );
                 })}

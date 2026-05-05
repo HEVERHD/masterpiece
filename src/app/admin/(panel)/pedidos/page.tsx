@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   ShoppingBag, CheckCircle2, XCircle, Truck, Clock,
   Search, Download, StickyNote, ChevronLeft, ChevronRight,
-  Pencil, Check,
+  Pencil, Check, Store, Globe, Plus, X, Loader2,
 } from "lucide-react";
 
 type OrderStatus = "PENDIENTE" | "PAGADO" | "ENVIADO" | "CANCELADO";
+type SourceFilter = "todos" | "web" | "tienda_fisica";
 
 interface Order {
   id: string;
@@ -27,6 +28,7 @@ interface Order {
   adminNote: string | null;
   items: unknown;
   status: OrderStatus;
+  source: string;
   createdAt: string;
 }
 
@@ -100,13 +102,22 @@ export default function PedidosPage() {
   const [orders,   setOrders]   = useState<Order[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [tab,      setTab]      = useState<OrderStatus | "TODOS">("PENDIENTE");
+  const [source,   setSource]   = useState<SourceFilter>("todos");
   const [search,   setSearch]   = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
   const [page,     setPage]     = useState(1);
 
-  // Note editing state: { id, draft }
-  const [editNote, setEditNote] = useState<{ id: string; draft: string } | null>(null);
+  // Note editing state
+  const [editNote,   setEditNote]   = useState<{ id: string; draft: string } | null>(null);
   const [savingNote, setSavingNote] = useState(false);
+
+  // Modal venta en tienda
+  const [saleModal,    setSaleModal]    = useState(false);
+  const [saleProduct,  setSaleProduct]  = useState("");
+  const [saleSize,     setSaleSize]     = useState("");
+  const [salePrice,    setSalePrice]    = useState("");
+  const [saleCustomer, setSaleCustomer] = useState("");
+  const [savingSale,   setSavingSale]   = useState(false);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -166,6 +177,32 @@ export default function PedidosPage() {
     }
   }
 
+  async function registerSale() {
+    if (!saleProduct.trim() || !salePrice.trim()) return;
+    setSavingSale(true);
+    try {
+      const res = await fetch("/api/pedidos", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productName:  saleProduct.trim(),
+          size:         saleSize.trim() || undefined,
+          price:        `$ ${Number(salePrice.replace(/\D/g, "")).toLocaleString("es-CO")}`,
+          customerName: saleCustomer.trim() || "Cliente tienda",
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      toast.success("Venta registrada");
+      setSaleModal(false);
+      setSaleProduct(""); setSaleSize(""); setSalePrice(""); setSaleCustomer("");
+      fetchOrders();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al registrar");
+    } finally {
+      setSavingSale(false);
+    }
+  }
+
   // Search: by name or phone
   const searched = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -177,11 +214,11 @@ export default function PedidosPage() {
     );
   }, [orders, search]);
 
-  // Tab filter
-  const filtered = useMemo(
-    () => (tab === "TODOS" ? searched : searched.filter((o) => o.status === tab)),
-    [searched, tab]
-  );
+  // Source + tab filter
+  const filtered = useMemo(() => {
+    const bySource = source === "todos" ? searched : searched.filter((o) => o.source === source);
+    return tab === "TODOS" ? bySource : bySource.filter((o) => o.status === tab);
+  }, [searched, tab, source]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -197,6 +234,57 @@ export default function PedidosPage() {
 
   return (
     <div className="space-y-5 max-w-3xl">
+      {/* Modal venta en tienda */}
+      {saleModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setSaleModal(false)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Store className="h-5 w-5 text-amber-600" />
+                <h2 className="font-bold text-base">Nueva venta en tienda</h2>
+              </div>
+              <button onClick={() => setSaleModal(false)} className="p-1 rounded-full hover:bg-gray-100"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-stone-500 block mb-1">Producto *</label>
+                <input type="text" value={saleProduct} onChange={(e) => setSaleProduct(e.target.value)}
+                  placeholder="Ej: GORRA NIKE SB TURQUI"
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-stone-500 block mb-1">Talla</label>
+                  <input type="text" value={saleSize} onChange={(e) => setSaleSize(e.target.value)}
+                    placeholder="L, 38, ÚNICO..."
+                    className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-stone-500 block mb-1">Precio *</label>
+                  <input type="number" value={salePrice} onChange={(e) => setSalePrice(e.target.value)}
+                    placeholder="80000"
+                    className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-stone-500 block mb-1">Nombre del cliente <span className="text-stone-400">(opcional)</span></label>
+                <input type="text" value={saleCustomer} onChange={(e) => setSaleCustomer(e.target.value)}
+                  placeholder="Ej: Juan Pérez"
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
+              </div>
+            </div>
+            <Button
+              onClick={registerSale}
+              disabled={savingSale || !saleProduct.trim() || !salePrice.trim()}
+              className="w-full bg-amber-500 hover:bg-amber-600 text-white gap-2"
+            >
+              {savingSale ? <Loader2 className="h-4 w-4 animate-spin" /> : <Store className="h-4 w-4" />}
+              Registrar venta
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
@@ -205,15 +293,50 @@ export default function PedidosPage() {
             {orders.length} pedido{orders.length !== 1 ? "s" : ""} en total
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          onClick={() => exportCSV(tab === "TODOS" ? orders : filtered)}
-        >
-          <Download className="h-4 w-4" />
-          Exportar CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            className="gap-2 bg-amber-500 hover:bg-amber-600 text-white"
+            onClick={() => setSaleModal(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Venta en tienda
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => exportCSV(tab === "TODOS" ? orders : filtered)}
+          >
+            <Download className="h-4 w-4" />
+            CSV
+          </Button>
+        </div>
+      </div>
+
+      {/* Canal de ventas */}
+      <div className="flex gap-2">
+        {([
+          { key: "todos",        label: "Todos los canales", icon: ShoppingBag },
+          { key: "web",          label: "Web",               icon: Globe       },
+          { key: "tienda_fisica",label: "Tienda física",     icon: Store       },
+        ] as { key: SourceFilter; label: string; icon: React.ElementType }[]).map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => { setSource(key); setPage(1); }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              source === key
+                ? "bg-stone-800 text-white border-stone-800"
+                : "bg-white text-stone-600 border-stone-200 hover:border-stone-400"
+            }`}
+          >
+            <Icon className="h-3 w-3" />
+            {label}
+            <span className="opacity-60">
+              ({key === "todos" ? searched.length : searched.filter((o) => o.source === key).length})
+            </span>
+          </button>
+        ))}
       </div>
 
       {/* Search */}
@@ -293,7 +416,14 @@ export default function PedidosPage() {
                       {order.customerName} ({order.customerPhone})
                     </a>
                   </p>
-                  <p className="text-muted-foreground">{deliveryLabel(order)}</p>
+                  <p className="text-muted-foreground flex items-center gap-1.5">
+                    {deliveryLabel(order)}
+                    {order.source === "tienda_fisica" && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                        <Store className="h-2.5 w-2.5" />Tienda
+                      </span>
+                    )}
+                  </p>
                   {order.message && (
                     <p className="italic text-muted-foreground">
                       💬 &ldquo;{order.message}&rdquo;

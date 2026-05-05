@@ -82,6 +82,7 @@ model Order {
   carrier       String?
   message       String?
   status        OrderStatus @default(PENDIENTE)
+  source        String      @default("web")
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   items         Json?

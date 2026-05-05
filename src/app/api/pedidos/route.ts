@@ -201,10 +201,57 @@ export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  const orders = await prisma.order.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  const orders = await prisma.order.findMany({ orderBy: { createdAt: "desc" } });
   return NextResponse.json(orders);
+}
+
+export async function POST(request: Request) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
+  const body = await request.json();
+  const { productId, productName, size, price, customerName } = body as {
+    productId?: string; productName: string; size?: string;
+    price: string; customerName?: string;
+  };
+
+  if (!productName || !price)
+    return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
+
+  // Decrementar stock si se indica producto y talla
+  if (productId && size) {
+    const productSize = await prisma.productSize.findUnique({
+      where: { productId_size: { productId, size } },
+    });
+    if (!productSize || productSize.stock <= 0)
+      return NextResponse.json({ error: "Sin stock para esa talla" }, { status: 409 });
+
+    await prisma.productSize.update({
+      where: { productId_size: { productId, size } },
+      data:  { stock: { decrement: 1 } },
+    });
+
+    const remaining = productSize.stock - 1;
+    if (remaining <= 1)
+      sendLowStockAlert(productName, size, remaining).catch(console.error);
+  }
+
+  const order = await prisma.order.create({
+    data: {
+      productId:     productId ?? null,
+      productName,
+      size:          size ?? null,
+      price,
+      customerName:  customerName?.trim() || "Cliente tienda",
+      customerPhone: "",
+      deliveryType:  "tienda",
+      address:       STORE_ADDRESS,
+      status:        "PAGADO",
+      source:        "tienda_fisica",
+    },
+  });
+
+  return NextResponse.json({ ok: true, orderId: order.id });
 }
 
 export async function PATCH(request: Request) {
