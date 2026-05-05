@@ -114,10 +114,54 @@ export default function PedidosPage() {
   // Modal venta en tienda
   const [saleModal,    setSaleModal]    = useState(false);
   const [saleProduct,  setSaleProduct]  = useState("");
+  const [saleProductId, setSaleProductId] = useState<string | undefined>(undefined);
   const [saleSize,     setSaleSize]     = useState("");
   const [salePrice,    setSalePrice]    = useState("");
   const [saleCustomer, setSaleCustomer] = useState("");
   const [savingSale,   setSavingSale]   = useState(false);
+
+  // Product search inside modal
+  interface ProductOption {
+    id: string; name: string; price: number;
+    images: { url: string }[];
+    sizes: { size: string; stock: number }[];
+  }
+  const [productQuery,   setProductQuery]   = useState("");
+  const [productResults, setProductResults] = useState<ProductOption[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<ProductOption | null>(null);
+  const [searching,      setSearching]      = useState(false);
+
+  const searchProducts = useCallback(async (q: string) => {
+    if (q.length < 1) { setProductResults([]); return; }
+    setSearching(true);
+    try {
+      const res  = await fetch(`/api/productos?search=${encodeURIComponent(q)}&admin=true`);
+      const data = await res.json();
+      setProductResults(data.slice(0, 6));
+    } catch { /* ignore */ } finally { setSearching(false); }
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => searchProducts(productQuery), 250);
+    return () => clearTimeout(t);
+  }, [productQuery, searchProducts]);
+
+  function pickProduct(p: ProductOption) {
+    setSelectedProduct(p);
+    setSaleProduct(p.name);
+    setSaleProductId(p.id);
+    setSalePrice(String(Math.round(Number(p.price))));
+    setSaleSize("");
+    setProductQuery("");
+    setProductResults([]);
+  }
+
+  function resetSaleModal() {
+    setSaleModal(false);
+    setSaleProduct(""); setSaleProductId(undefined); setSaleSize("");
+    setSalePrice(""); setSaleCustomer("");
+    setSelectedProduct(null); setProductQuery(""); setProductResults([]);
+  }
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -185,6 +229,7 @@ export default function PedidosPage() {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          productId:    saleProductId,
           productName:  saleProduct.trim(),
           size:         saleSize.trim() || undefined,
           price:        `$ ${Number(salePrice.replace(/\D/g, "")).toLocaleString("es-CO")}`,
@@ -193,8 +238,7 @@ export default function PedidosPage() {
       });
       if (!res.ok) throw new Error((await res.json()).error);
       toast.success("Venta registrada");
-      setSaleModal(false);
-      setSaleProduct(""); setSaleSize(""); setSalePrice(""); setSaleCustomer("");
+      resetSaleModal();
       fetchOrders();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error al registrar");
@@ -236,46 +280,147 @@ export default function PedidosPage() {
     <div className="space-y-5 max-w-3xl">
       {/* Modal venta en tienda */}
       {saleModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setSaleModal(false)}>
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={resetSaleModal}>
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Store className="h-5 w-5 text-amber-600" />
                 <h2 className="font-bold text-base">Nueva venta en tienda</h2>
               </div>
-              <button onClick={() => setSaleModal(false)} className="p-1 rounded-full hover:bg-gray-100"><X className="h-4 w-4" /></button>
+              <button onClick={resetSaleModal} className="p-1 rounded-full hover:bg-gray-100"><X className="h-4 w-4" /></button>
             </div>
+
             <div className="space-y-3">
+              {/* ── Buscador de producto ── */}
               <div>
                 <label className="text-xs font-medium text-stone-500 block mb-1">Producto *</label>
-                <input type="text" value={saleProduct} onChange={(e) => setSaleProduct(e.target.value)}
-                  placeholder="Ej: GORRA NIKE SB TURQUI"
-                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
+
+                {selectedProduct ? (
+                  /* Producto seleccionado */
+                  <div className="flex items-center gap-2 border border-amber-300 bg-amber-50 rounded-xl px-3 py-2">
+                    {selectedProduct.images[0] && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={selectedProduct.images[0].url} alt="" className="w-8 h-8 rounded-md object-cover flex-shrink-0" />
+                    )}
+                    <span className="text-sm font-medium flex-1 truncate">{selectedProduct.name}</span>
+                    <button onClick={() => { setSelectedProduct(null); setSaleProduct(""); setSaleProductId(undefined); setSaleSize(""); setSalePrice(""); }}
+                      className="text-stone-400 hover:text-stone-600">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  /* Campo de búsqueda */
+                  <div className="relative">
+                    <div className="flex items-center gap-2 border border-stone-200 rounded-xl px-3 py-2.5">
+                      <Search className="h-3.5 w-3.5 text-stone-400 flex-shrink-0" />
+                      <input
+                        type="text"
+                        value={productQuery}
+                        onChange={(e) => setProductQuery(e.target.value)}
+                        placeholder="Buscar en catálogo..."
+                        autoFocus
+                        className="flex-1 text-sm bg-transparent focus:outline-none"
+                      />
+                      {searching && <Loader2 className="h-3.5 w-3.5 animate-spin text-stone-400" />}
+                    </div>
+                    {productResults.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-200 rounded-xl shadow-lg overflow-hidden z-10">
+                        {productResults.map((p) => (
+                          <button key={p.id} onClick={() => pickProduct(p)}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-amber-50 transition-colors text-left">
+                            {p.images[0] ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={p.images[0].url} alt="" className="w-9 h-9 rounded-md object-cover flex-shrink-0" />
+                            ) : (
+                              <div className="w-9 h-9 rounded-md bg-stone-100 flex items-center justify-center flex-shrink-0">
+                                <Store className="h-4 w-4 text-stone-400" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{p.name}</p>
+                              <p className="text-xs text-stone-400">
+                                $ {Number(p.price).toLocaleString("es-CO")}
+                                {" · "}
+                                {p.sizes.filter(s => s.stock > 0).length} tallas con stock
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {productQuery.length > 0 && !searching && productResults.length === 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-200 rounded-xl shadow-lg px-4 py-3 text-sm text-stone-400 z-10">
+                        Sin resultados — escribe el nombre manualmente abajo
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Fallback manual si no encontró en catálogo */}
+                {!selectedProduct && (
+                  <input type="text" value={saleProduct} onChange={(e) => setSaleProduct(e.target.value)}
+                    placeholder="O escribe el nombre manualmente"
+                    className="mt-2 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
+                )}
               </div>
-              <div className="grid grid-cols-2 gap-3">
+
+              {/* ── Tallas disponibles ── */}
+              {selectedProduct && selectedProduct.sizes.filter(s => s.stock > 0).length > 0 && (
+                <div>
+                  <label className="text-xs font-medium text-stone-500 block mb-1.5">Talla</label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedProduct.sizes.filter(s => s.stock > 0).map((s) => (
+                      <button key={s.size} onClick={() => setSaleSize(s.size)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                          saleSize === s.size
+                            ? "bg-amber-500 text-white border-amber-500"
+                            : "border-stone-200 text-stone-700 hover:border-amber-400"
+                        }`}>
+                        {s.size}
+                        <span className="ml-1 text-[10px] opacity-60">({s.stock})</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Talla manual si no hay catálogo o no tiene tallas */}
+              {!selectedProduct && (
                 <div>
                   <label className="text-xs font-medium text-stone-500 block mb-1">Talla</label>
                   <input type="text" value={saleSize} onChange={(e) => setSaleSize(e.target.value)}
                     placeholder="L, 38, ÚNICO..."
                     className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-stone-500 block mb-1">Precio *</label>
+              )}
+
+              {/* ── Precio ── */}
+              <div>
+                <label className="text-xs font-medium text-stone-500 block mb-1">
+                  Precio * {selectedProduct && <span className="text-amber-500">(autocompletado)</span>}
+                </label>
+                <div className="flex items-center gap-2 border border-stone-200 rounded-xl px-3 py-2.5">
+                  <span className="text-stone-400 text-sm font-mono">$</span>
                   <input type="number" value={salePrice} onChange={(e) => setSalePrice(e.target.value)}
                     placeholder="80000"
-                    className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
+                    className="flex-1 text-sm bg-transparent focus:outline-none font-mono" />
                 </div>
               </div>
+
+              {/* ── Cliente ── */}
               <div>
-                <label className="text-xs font-medium text-stone-500 block mb-1">Nombre del cliente <span className="text-stone-400">(opcional)</span></label>
+                <label className="text-xs font-medium text-stone-500 block mb-1">
+                  Nombre del cliente <span className="text-stone-400">(opcional)</span>
+                </label>
                 <input type="text" value={saleCustomer} onChange={(e) => setSaleCustomer(e.target.value)}
                   placeholder="Ej: Juan Pérez"
                   className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
               </div>
             </div>
+
             <Button
               onClick={registerSale}
-              disabled={savingSale || !saleProduct.trim() || !salePrice.trim()}
+              disabled={savingSale || (!saleProduct.trim() && !selectedProduct) || !salePrice.trim()}
               className="w-full bg-amber-500 hover:bg-amber-600 text-white gap-2"
             >
               {savingSale ? <Loader2 className="h-4 w-4 animate-spin" /> : <Store className="h-4 w-4" />}
