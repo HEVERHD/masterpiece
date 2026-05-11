@@ -20,7 +20,7 @@ function normalizePhone(phone: string): string {
 }
 
 function baseUrl() {
-  return process.env.NEXT_PUBLIC_URL ?? "https://masterpiece-brown.vercel.app";
+  return process.env.NEXT_PUBLIC_URL ?? "https://www.masterpiecectg.com";
 }
 
 const STORE_ADDRESS = "Campestre mz 82 lote 3 etapa 8, Cartagena, Colombia";

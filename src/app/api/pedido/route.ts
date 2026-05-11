@@ -19,7 +19,7 @@ function normalizePhone(phone: string): string {
 }
 
 function baseUrl() {
-  return process.env.NEXT_PUBLIC_URL ?? "https://masterpiece-brown.vercel.app";
+  return process.env.NEXT_PUBLIC_URL ?? "https://www.masterpiecectg.com";
 }
 
 export async function POST(req: Request) {
